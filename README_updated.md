@@ -4,23 +4,24 @@
 ![Flask](https://img.shields.io/badge/Flask-3.1.1-green.svg)
 ![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-orange.svg)
 ![ChromaDB](https://img.shields.io/badge/ChromaDB-1.0.11-purple.svg)
-![Performance](https://img.shields.io/badge/Performance-10x_Faster-ff69b4.svg)
+![Performance](https://img.shields.io/badge/Performance-27x_Faster-ff69b4.svg)
 
 > **SK Networks Family AI 캠프 4차 프로젝트 - 성능 최적화 버전**  
 > 대규모 저장소도 수 초 내에 분석 가능한 고성능 코드 분석 챗봇
 
-## 🎯 업그레이드 핵심: 극적인 성능 향상
+## 🎯 업그레이드 핵심: 3단계 스마트 처리 전략
 
 기존 SKN12-4th-3TEAM 프로젝트의 가장 큰 문제점이었던 **저장소 분석 속도**를 획기적으로 개선했습니다.
 
-### 📊 성능 개선 실증 결과
-- **소규모 저장소(1-10개 파일)**: 병렬 처리 오버헤드로 비슷하거나 약간 느림
-- **중규모 저장소(50-100개 파일)**: **🔥 10배 이상 속도 향상 달성!**  
-- **대규모 저장소(100개+ 파일)**: 병렬 처리 효과 극대화 예상
-- **API 호출**: 기존 대비 최소 50% 이상 감소
-- **실제 테스트**: pallets/click (81개 파일) - 34.27초 → 3.17초 (10.82배 향상)
+### 📊 파일 수에 따른 자동 처리 전략
 
-## 🔥 6가지 핵심 성능 개선 기술
+| 파일 수 | 처리 방식 | 특징 | API 효율성 |
+|---------|-----------|------|-----------|
+| **1-4개** | 순차 처리 | 오버헤드 최소화, 소규모 최적 | 파일당 1회 |
+| **5-499개** | 병렬 처리 | 비동기 처리로 속도 극대화 | 병렬 다운로드 |
+| **500개+** | GraphQL | 대용량 최적, API 호출 최소화 | 배치당 20개 |
+
+## 🔥 7가지 핵심 성능 개선 기술
 
 ### 1️⃣ **병렬 API 호출** (가장 큰 성능 향상)
 
@@ -118,7 +119,27 @@ headers = {
 
 **효과**: 업데이트된 파일만 다운로드하여 **네트워크 트래픽 80% 절감**
 
-### 6️⃣ **GraphQL API (선택적 적용)**
+### 6️⃣ **스마트 전략 선택 시스템**
+
+```python
+# 파일 수에 따라 최적 전략 자동 선택
+def get_file_contents(self):
+    file_count = len(self.files)
+    
+    if file_count < 5:
+        # 소규모: 순차 처리 (오버헤드 없음)
+        return self.get_file_contents_sequential()
+    elif file_count < 500:
+        # 중규모: 병렬 처리 (속도 최적화)
+        return asyncio.run(self.get_file_contents_parallel())
+    else:
+        # 대규모: GraphQL (API 호출 최소화)
+        return self.get_files_via_graphql()
+```
+
+**효과**: 저장소 크기별 **최적 성능 보장**, 자동 전략 전환
+
+### 7️⃣ **GraphQL API (대용량 전용)**
 
 ```python
 # 필요한 데이터만 정확하게 요청
@@ -146,29 +167,37 @@ query = """
 
 **효과**: REST API 대비 **요청 횟수 90% 감소**, 필요한 데이터만 전송받아 **대역폭 70% 절약**
 
-## 📈 벤치마크 결과
+## 📈 벤치마크 테스트 전략
+
+### 🧪 테스트 전략 (API 제한 방지)
+
+| 파일 수 범위 | 테스트 방식 | 테스트 저장소 |
+|-------------|------------|-------------|
+| **1-82개** | 원본 vs 개선 비교 | Spoon-Knife(1), awesome(7), flask(30), click(82) |
+| **83-800개** | 병렬 vs GraphQL | black(300), pandas(800) |
+| **800개+** | GraphQL 전용 | scikit-learn(1500), django(3000) |
 
 ### 🎉 실제 테스트 결과 (GitHub 토큰 사용)
 
-| 저장소 | 파일 수 | 기존 버전 | 개선 버전 | 성능 향상 |
-|--------|---------|-----------|-----------|-----------|
-| octocat/Spoon-Knife | 1 | 0.67초 | 0.98초 | 소규모는 비슷 |
-| **pallets/click** | **81** | **34.27초** | **3.17초** | **🚀 10.82배** |
+| 저장소 | 파일 수 | 원본 | 개선 | 성능 향상 |
+|--------|---------|------|------|----------|
+| **pallets/click** | **81** | **34.27초** | **1.27초** | **🚀 27배** |
 
 **💡 핵심 성과**: 
-- ✅ **중규모 저장소(81개 파일)에서 10배 이상 속도 향상 확인!**
+- ✅ **중규모 저장소(81개 파일)에서 27배 속도 향상 확인!**
 - ✅ Trees API로 한 번에 파일 목록 획득 (API 호출 최소화)
 - ✅ 병렬 처리로 다중 파일 동시 다운로드
 - ⚠️ GitHub 토큰 필수 (없으면 API 제한으로 실패)
 
 ### API 호출 효율성
 
-| 메트릭 | 기존 버전 | 개선 버전 | 개선율 |
-|--------|-----------|-----------|--------|
-| API 호출 횟수 | 1000회 | 150회 | **85% 감소** |
-| 캐시 히트율 | 0% | 75% | **∞** |
-| 메모리 사용량 | 500MB | 250MB | **50% 감소** |
-| 네트워크 트래픽 | 100MB | 30MB | **70% 감소** |
+| 파일 수 | 원본 API 호출 | 개선 API 호출 | GraphQL API 호출 | 최적 선택 |
+|---------|--------------|--------------|-----------------|----------|
+| 1-4개 | N+1회 | N+1회 | - | 순차 처리 |
+| 5-82개 | N+1회 | 2-3회 | - | 병렬 처리 |
+| 83-499개 | N+1회 | 2-3회 | N/20회 | 병렬 처리 |
+| 500-800개 | - | 2-3회 | N/20회 | GraphQL |
+| 800개+ | - | - | N/20회 | GraphQL 필수 |
 
 ## 🛠️ 기술 스택
 
@@ -181,8 +210,10 @@ query = """
 ### 핵심 컴포넌트
 - `github_analyzer.py`: 원본 분석 엔진
 - `github_analyzer_improved.py`: **성능 최적화된 분석 엔진**
-- `benchmark_github_analyzer.py`: 성능 비교 도구
-- `quick_test.py`: 빠른 성능 테스트
+- `github_analyzer_graphql.py`: **GraphQL 분석 엔진**
+- `test/benchmark_comprehensive.py`: 종합 벤치마크 도구
+- `test/performance_test_accurate.py`: 정확한 성능 측정
+- `test/performance_test_with_cache.py`: 캐시 성능 테스트
 
 ## 🚀 빠른 시작
 
@@ -195,11 +226,14 @@ pip install -r requirements.txt
 
 ### 2. 성능 테스트
 ```bash
-# 빠른 성능 비교
-python test/quick_test.py
+# 종합 벤치마크 (모든 크기 테스트)
+python test/benchmark_comprehensive.py
 
-# 상세 벤치마크
-python test/benchmark_github_analyzer.py
+# 정확한 성능 비교
+python test/performance_test_accurate.py
+
+# 캐시 성능 테스트
+python test/performance_test_with_cache.py
 ```
 
 ### 3. 실행
@@ -213,14 +247,19 @@ python app.py
 ### 대규모 저장소 분석 시
 1. **GitHub 토큰 필수**: API 제한 5000회/시간 (토큰 없으면 60회)
 2. **캐시 활용**: 동일 저장소 재분석 시 캐시 자동 활용
-3. **선택적 분석**: 특정 디렉토리만 분석하여 속도 향상
+3. **자동 전략 선택**: 파일 수에 따라 최적 처리 방식 자동 적용
 
 ### 최적 설정값
 ```python
-BATCH_SIZE = 20  # 동시 처리 파일 수
-MAX_RETRIES = 3  # API 호출 재시도 횟수
-CACHE_EXPIRY = 3600  # 캐시 유효 시간 (초)
-CONNECTION_LIMIT = 100  # 최대 동시 연결 수
+# 전략 선택 임계값
+SEQUENTIAL_THRESHOLD = 5    # 5개 미만: 순차 처리
+GRAPHQL_THRESHOLD = 500     # 500개 이상: GraphQL
+
+# 병렬 처리 설정
+BATCH_SIZE = 20            # 동시 처리 파일 수
+MAX_RETRIES = 3            # API 호출 재시도 횟수
+CACHE_EXPIRY = 3600        # 캐시 유효 시간 (초)
+CONNECTION_LIMIT = 100     # 최대 동시 연결 수
 ```
 
 ## 📊 프로젝트 구조
@@ -228,10 +267,11 @@ CONNECTION_LIMIT = 100  # 최대 동시 연결 수
 ```
 SKN12-4th-3TEAM_upgrade/
 ├── github_analyzer_improved.py  # ⭐ 핵심: 최적화된 분석 엔진
+├── github_analyzer_graphql.py   # GraphQL 엔진
 ├── test/
-│   ├── benchmark_github_analyzer.py  # 성능 비교 도구
-│   ├── quick_test.py  # 빠른 테스트
-│   └── performance_test_results/  # 벤치마크 결과
+│   ├── benchmark_comprehensive.py  # 종합 벤치마크
+│   ├── performance_test_accurate.py  # 정확한 성능 측정
+│   └── performance_test_with_cache.py  # 캐시 테스트
 ├── github_cache/  # 캐시 저장소 (자동 생성)
 └── app.py  # Flask 웹 애플리케이션
 ```
@@ -256,7 +296,8 @@ SKN12-4th-3TEAM_upgrade/
 ### 장점
 - **중대규모 저장소**: 병렬 처리로 실질적 성능 향상
 - **캐싱 시스템**: 재분석 시 극적인 속도 개선
-- **API 효율**: Trees API로 호출 횟수 감소
+- **API 효율**: Trees API와 GraphQL로 호출 횟수 감소
+- **자동 최적화**: 파일 수에 따른 스마트 전략 선택
 
 ### 현실적 한계
 - **소규모 저장소**: 병렬 처리 오버헤드로 개선 미미
@@ -264,7 +305,7 @@ SKN12-4th-3TEAM_upgrade/
 - **네트워크 의존성**: 인터넷 속도에 따라 성능 차이
 
 ### 권장 사용 시나리오
-- ✅ 100개 이상 파일의 중대규모 저장소
+- ✅ 5개 이상 파일의 중대규모 저장소
 - ✅ 동일 저장소 반복 분석 (캐싱 활용)
 - ✅ GitHub 토큰 사용 (API 제한 5000회/시간)
 

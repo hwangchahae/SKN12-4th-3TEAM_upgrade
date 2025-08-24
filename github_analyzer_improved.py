@@ -402,29 +402,42 @@ class GitHubRepositoryFetcherImproved:
         
         file_count = len(self.files)
         
-        # 손익분기점: 5개 파일
-        BREAKEVEN_POINT = 5
+        # 전략 선택 임계값
+        SEQUENTIAL_THRESHOLD = 5    # 5개 미만: 순차 처리
+        GRAPHQL_THRESHOLD = 500     # 500개 이상: GraphQL 사용
         
         print(f"[DEBUG] 파일 수: {file_count}개")
         
-        if file_count < BREAKEVEN_POINT:
+        if file_count < SEQUENTIAL_THRESHOLD:
             # 작은 저장소: 순차 처리가 더 빠름
-            print(f"[DEBUG] {BREAKEVEN_POINT}개 미만 -> 순차 처리 선택")
+            print(f"[DEBUG] {SEQUENTIAL_THRESHOLD}개 미만 -> 순차 처리 선택")
             return self.get_file_contents_sequential()
-        else:
-            # 큰 저장소: 병렬 처리가 더 빠름
-            print(f"[DEBUG] {BREAKEVEN_POINT}개 이상 -> 병렬 처리 선택")
-            # 이벤트 루프가 이미 실행 중인지 확인
+        elif file_count >= GRAPHQL_THRESHOLD and self.token:
+            # 대용량 저장소: GraphQL 사용 (토큰 필요)
+            print(f"[DEBUG] {GRAPHQL_THRESHOLD}개 이상 -> GraphQL 모드 선택")
             try:
-                loop = asyncio.get_running_loop()
-                # 이미 루프가 실행 중이면 새 스레드에서 실행
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(asyncio.run, self.get_file_contents_parallel())
-                    return future.result()
-            except RuntimeError:
-                # 루프가 없으면 새로 생성
-                return asyncio.run(self.get_file_contents_parallel())
+                from github_analyzer_graphql import GitHubGraphQLFetcher
+                graphql_fetcher = GitHubGraphQLFetcher(self.repo_url, self.token)
+                files = graphql_fetcher.get_all_files_optimized()
+                self.api_call_count += graphql_fetcher.api_call_count
+                return files
+            except ImportError:
+                print(f"[DEBUG] GraphQL 모듈 없음 -> 병렬 처리로 대체")
+                # GraphQL 모듈이 없으면 병렬 처리로 대체
+        
+        # 중간 크기 저장소: 병렬 처리가 최적
+        print(f"[DEBUG] {SEQUENTIAL_THRESHOLD}개 이상 {GRAPHQL_THRESHOLD}개 미만 -> 병렬 처리 선택")
+        # 이벤트 루프가 이미 실행 중인지 확인
+        try:
+            loop = asyncio.get_running_loop()
+            # 이미 루프가 실행 중이면 새 스레드에서 실행
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, self.get_file_contents_parallel())
+                return future.result()
+        except RuntimeError:
+            # 루프가 없으면 새로 생성
+            return asyncio.run(self.get_file_contents_parallel())
     
     def get_directory_structure(self) -> str:
         """디렉토리 구조 생성"""
