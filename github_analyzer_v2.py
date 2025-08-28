@@ -97,6 +97,7 @@ def save_analysis_log(repo_url: str, file_count: int, directory_structure: str, 
         log_content.append("## API 호출 통계")
         log_content.append(f"- GitHub API 호출: {api_call_counter.get('github', 0)}회")
         log_content.append(f"- OpenAI Embedding API 호출: {api_call_counter.get('openai_embedding', 0)}회")
+        log_content.append(f"- OpenAI Role Tagging API 호출: {api_call_counter.get('openai_chat', 0)}회")
         total_api_calls = sum(api_call_counter.values())
         log_content.append(f"- 총 API 호출: {total_api_calls}회")
         
@@ -996,8 +997,9 @@ class RepositoryEmbedder:
     def process_and_embed(self, files: List[Dict[str, Any]]):
         # 내부 비동기 함수 정의
         async def async_process_and_embed(files):
-            from openai import AsyncOpenAI
+            import openai
             api_key = os.environ.get("OPENAI_API_KEY")
+            client = openai.AsyncClient(api_key=api_key)
             enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
             def safe_meta(meta):
                 return {k: ('' if v is None else v if not isinstance(v, (int, float, bool)) else v) for k, v in meta.items()}
@@ -1561,17 +1563,14 @@ class RepositoryEmbedder:
                     print(f"[WARNING] 역할 태깅 실패: {e}")
                     role_tag = ''
                 return (embedding, role_tag, chunk, file, i, t_start, t_end, func_name, class_name, start_line, end_line)
-            # 3. 비동기 병렬 실행 (max_concurrent=20) - async context manager 사용
+            # 3. 비동기 병렬 실행 (max_concurrent=20)
             print(f"[DEBUG] 임베딩+역할태깅 asyncio 병렬 처리 시작 (청크 수: {len(all_chunks)})")
-            
-            async with AsyncOpenAI(api_key=api_key) as client:
-                semaphore = asyncio.Semaphore(20)
-                async def sem_task(args):
-                    async with semaphore:
-                        return await embed_and_tag_async(args, client)
-                tasks = [asyncio.create_task(sem_task(args)) for args in all_chunks]
-                results = await asyncio.gather(*tasks, return_exceptions=False)
-            
+            semaphore = asyncio.Semaphore(20)
+            async def sem_task(args):
+                async with semaphore:
+                    return await embed_and_tag_async(args, client)
+            tasks = [sem_task(args) for args in all_chunks]
+            results = await asyncio.gather(*tasks)
             print(f"[DEBUG] 임베딩+역할태깅 asyncio 병렬 처리 완료")
             # 4. DB 저장 (동기)
             successful_saves = 0
@@ -1626,7 +1625,7 @@ class RepositoryEmbedder:
             
             # 전체 처리 완료 요약 로그
             print(f"[INFO] 임베딩 처리 완료: 총 {successful_saves}개 청크 저장")
-        # 동기 함수에서 비동기 실행 - asyncio.run 사용
+        # 동기 함수에서 비동기 실행
         if sys.version_info >= (3, 7):
             asyncio.run(async_process_and_embed(files))
         else:

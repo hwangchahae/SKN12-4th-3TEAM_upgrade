@@ -363,20 +363,8 @@ def handle_chat(session_id, message):
                 'error': "query_error"
             }
         
-        # 1. 질문 의도 태깅 (LLM)
-        try:
-            tag_prompt = f"아래 질문의 의도(원하는 코드 역할/기능)를 한글로 간단히 요약해줘.\n\n질문:\n{message}"
-            tag_resp = openai.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": tag_prompt}],
-                temperature=0.0,
-                max_tokens=64
-            )
-            question_role_tag = tag_resp.choices[0].message.content.strip() if tag_resp.choices[0].message.content else ""
-            print(f"[DEBUG] 질문 의도 태그: {question_role_tag}")
-        except Exception as e:
-            print(f"[WARNING] 질문 의도 태깅 실패: {e}")
-            question_role_tag = ''
+        # 1. 질문 의도 태깅 비활성화 (Lazy Loading으로 대체)
+        question_role_tag = ''  # 질문 의도 태깅 제거
         # 스코프 키워드 추출
         scope = extract_scope_from_question(message)
         
@@ -400,6 +388,31 @@ def handle_chat(session_id, message):
             
             # 2. 역할 태그 매칭 점수
             role_tag = meta.get('role_tag', '')
+            
+            # Lazy Loading: role_tag이 비어있으면 실시간으로 생성
+            if not role_tag and chunk_id and i < len(result.get('documents', [])):
+                try:
+                    chunk_content = result['documents'][i][:1000] if result['documents'][i] else ''
+                    if chunk_content:
+                        tag_prompt = f"아래 코드는 어떤 역할(기능/목적)을 하나요? 한글로 간단히 요약해줘.\n\n코드:\n{chunk_content}"
+                        tag_resp = openai.chat.completions.create(
+                            model="gpt-3.5-turbo",
+                            messages=[{"role": "user", "content": tag_prompt}],
+                            temperature=0.0,
+                            max_tokens=64
+                        )
+                        role_tag = tag_resp.choices[0].message.content.strip()
+                        meta['role_tag'] = role_tag
+                        # 생성된 role_tag을 ChromaDB에 업데이트
+                        collection.update(
+                            ids=[chunk_id],
+                            metadatas=[meta]
+                        )
+                        print(f"[DEBUG] Lazy 역할 태깅 완료: {chunk_id[:30]} -> {role_tag[:30]}...")
+                except Exception as e:
+                    print(f"[WARNING] Lazy 역할 태깅 실패: {e}")
+                    role_tag = ''
+            
             if question_role_tag and role_tag:
                 # 완전 일치 또는 포함 관계 점수
                 if question_role_tag == role_tag:
@@ -508,6 +521,25 @@ def handle_chat(session_id, message):
             if meta.get('start_line') and meta.get('end_line'):
                 meta_info.append(f"라인: {meta['start_line']}~{meta['end_line']}")
             if meta.get('chunk_type'): meta_info.append(f"타입: {meta['chunk_type']}")
+            
+            # Lazy Loading: 필요한 경우만 role_tag 생성 (질문에 "역할"이나 "기능" 포함 시)
+            if ('역할' in message or '기능' in message or '목적' in message or 'role' in message.lower()):
+                if not meta.get('role_tag') and chunk['doc']:
+                    try:
+                        chunk_content = chunk['doc'][:1000]
+                        tag_prompt = f"아래 코드는 어떤 역할(기능/목적)을 하나요? 한글로 간단히 요약해줘.\n\n코드:\n{chunk_content}"
+                        tag_resp = openai.chat.completions.create(
+                            model="gpt-3.5-turbo",
+                            messages=[{"role": "user", "content": tag_prompt}],
+                            temperature=0.0,
+                            max_tokens=64
+                        )
+                        role_tag = tag_resp.choices[0].message.content.strip()
+                        meta['role_tag'] = role_tag
+                        print(f"[DEBUG] Lazy 역할 태깅: {meta.get('file_name', 'unknown')} -> {role_tag[:30]}...")
+                    except Exception as e:
+                        print(f"[WARNING] Lazy 역할 태깅 실패: {e}")
+            
             if meta.get('role_tag'): meta_info.append(f"역할: {meta['role_tag']}")
             
             # 청크 컨텍스트에 추가
@@ -531,6 +563,25 @@ def handle_chat(session_id, message):
                     if meta.get('class_name'): meta_info.append(f"클래스: {meta['class_name']}")
                     if meta.get('start_line') and meta.get('end_line'):
                         meta_info.append(f"라인: {meta['start_line']}~{meta['end_line']}")
+                    
+                    # 스코어가 낮은 청크도 필요 시 role_tag 생성
+                    if ('역할' in message or '기능' in message or '목적' in message or 'role' in message.lower()):
+                        if not meta.get('role_tag') and chunk['doc']:
+                            try:
+                                chunk_content = chunk['doc'][:1000]
+                                tag_prompt = f"아래 코드는 어떤 역할(기능/목적)을 하나요? 한글로 간단히 요약해줘.\n\n코드:\n{chunk_content}"
+                                tag_resp = openai.chat.completions.create(
+                                    model="gpt-3.5-turbo",
+                                    messages=[{"role": "user", "content": tag_prompt}],
+                                    temperature=0.0,
+                                    max_tokens=64
+                                )
+                                role_tag = tag_resp.choices[0].message.content.strip()
+                                meta['role_tag'] = role_tag
+                                print(f"[DEBUG] Lazy 역할 태깅: {meta.get('file_name', 'unknown')} -> {role_tag[:30]}...")
+                            except Exception as e:
+                                print(f"[WARNING] Lazy 역할 태깅 실패: {e}")
+                    
                     if meta.get('role_tag'): meta_info.append(f"역할: {meta['role_tag']}")
                     
                     chunk_str = f"[{'/'.join(meta_info)}]\n{chunk['doc']}"
