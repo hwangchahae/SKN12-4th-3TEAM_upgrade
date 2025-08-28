@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub AI 코드 분석 챗봇</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+        
+        .loader {
+          position: relative;
+          width: 120px;
+          height: 90px;
+          margin: 0 auto;
+        }
+
+        .loader:before {
+          content: "";
+          position: absolute;
+          bottom: 30px;
+          left: 50px;
+          height: 30px;
+          width: 30px;
+          border-radius: 50%;
+          background: #5955d4;
+          animation: loading-bounce 0.5s ease-in-out infinite alternate;
+        }
+
+        .loader:after {
+          content: "";
+          position: absolute;
+          right: 0;
+          top: 0;
+          height: 7px;
+          width: 45px;
+          border-radius: 4px;
+          box-shadow: 0 5px 0 #f2f2f2, -35px 50px 0 #f2f2f2, -70px 95px 0 #f2f2f2;
+          animation: loading-step 1s ease-in-out infinite;
+        }
+
+        @keyframes loading-bounce {
+          0% {
+            transform: scale(1, 0.7);
+          }
+
+          40% {
+            transform: scale(0.8, 1.2);
+          }
+
+          60% {
+            transform: scale(1, 1);
+          }
+
+          100% {
+            bottom: 140px;
+          }
+        }
+
+        @keyframes loading-step {
+          0% {
+            box-shadow: 0 10px 0 rgba(0, 0, 0, 0),
+                    0 10px 0 #f2f2f2,
+                    -35px 50px 0 #f2f2f2,
+                    -70px 90px 0 #f2f2f2;
+          }
+
+          100% {
+            box-shadow: 0 10px 0 #f2f2f2,
+                    -35px 50px 0 #f2f2f2,
+                    -70px 90px 0 #f2f2f2,
+                    -70px 90px 0 rgba(0, 0, 0, 0);
+          }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-300 min-h-screen">
+<div class="flex flex-col min-h-screen">
+<!-- 상단 네비게이터 -->
+<header class="bg-gray-800 p-3 flex items-center justify-between border-b border-gray-700" style="height: 100px; overflow: visible;">
+  <div class="flex items-center">
+    <span class="material-icons text-gray-400 mr-3">menu</span>
+    <img src="/static/logo.jpg" alt="logo" class="h-36 w-36 object-contain mr-2" style="margin-top: -16px; margin-bottom: -16px;" />
+    <span class="text-white font-semibold ml-3 text-lg"></span>
+  </div>
+  <div class="flex items-center">
+    <div class="relative mr-4">
+      <input class="bg-gray-700 text-gray-300 placeholder-gray-500 rounded-md py-1.5 px-3 pl-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm" placeholder="/ Type to search" style="width: 300px;" type="text"/>
+      <span class="material-icons absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">search</span>
+    </div>
+    <button class="p-1.5 rounded-md hover:bg-gray-700 mr-2">
+      <span class="material-icons text-gray-400">add</span>
+    </button>
+    <button class="p-1.5 rounded-md hover:bg-gray-700 mr-2">
+      <span class="material-icons text-gray-400">play_arrow</span>
+    </button>
+    <button class="p-1.5 rounded-md hover:bg-gray-700 mr-2">
+      <span class="material-icons text-gray-400">inbox</span>
+    </button>
+    {% if user_info and user_info.avatar_url %}
+      <img alt="User avatar" class="w-8 h-8 rounded-full mr-2" src="{{ user_info.avatar_url }}"/>
+    {% else %}
+      <span class="material-icons text-gray-400 mr-2">account_circle</span>
+    {% endif %}
+    {% if user_info and user_info.login %}
+      <span class="text-white text-sm mr-3">{{ user_info.login }}</span>
+    {% endif %}
+    <a href="{{ url_for('logout') }}" class="p-1.5 rounded-md hover:bg-gray-700 mr-2" title="Logout">
+      <span class="material-icons text-gray-400">logout</span>
+    </a>
+  </div>
+</header>
+
+<!-- 메인 컨텐츠 영역 -->
+<div class="flex flex-1">
+  <!-- 왼쪽 사이드바 네비게이션 -->
+  {% if user_info %}
+  <div class="bg-gray-800 w-64 border-r border-gray-700 flex-shrink-0 hidden md:block">
+    <div class="p-4">
+      <div class="mb-6">
+        <h2 class="text-white font-semibold mb-3">My Repositories</h2>
+        <div class="flex justify-between items-center mb-2">
+          <input type="text" placeholder="Find a repository..." class="w-full bg-gray-700 text-gray-300 rounded-md py-1 px-2 text-sm border border-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500" id="repo-search-input">
+        </div>
+        <div class="mt-3">
+          {% if repositories %}
+            <ul class="space-y-2" id="repo-list">
+              {% for repo in repositories %}
+                <li class="flex items-center repo-item group">
+                  <span class="w-3 h-3 mr-2 rounded-full {% if repo.private %}bg-red-500{% else %}bg-green-500{% endif %} flex-shrink-0" title="{% if repo.private %}Private{% else %}Public{% endif %}"></span>
+                  <button onclick="showRepoActionModal('{{ repo.html_url }}', '{{ repo.full_name }}')" class="flex-1 text-left text-gray-300 hover:text-white text-sm truncate mr-2" title="{{ repo.full_name }} 작업 선택">{{ repo.owner.login }}/{{ repo.name }}</button>
+                  <a href="{{ repo.html_url }}" target="_blank" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-700" title="GitHub에서 보기">
+                    <span class="material-icons text-gray-400 hover:text-white text-sm">open_in_new</span>
+                  </a>
+                </li>
+              {% endfor %}
+            </ul>
+            {% if repositories|length == 10 %} {# Assuming per_page=10 from app.py #}
+            <a href="https://github.com/{{ user_info.login }}?tab=repositories" target="_blank" class="text-xs text-gray-400 hover:text-gray-200 mt-3 flex items-center">
+              <span>Show all repositories on GitHub</span>
+              <span class="material-icons text-xs ml-1">open_in_new</span>
+            </a>
+            {% endif %}
+          {% else %}
+            <p class="text-gray-400 text-sm">No repositories found or could not fetch them.</p>
+            <p class="text-gray-400 text-sm mt-1">Ensure you have granted 'repo' access if you have private repositories.</p>
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- 분석된 레포지토리 섹션 -->
+      {% if my_repos_analyzed or public_repos_analyzed %}
+      <div class="mb-6">
+        <h2 class="text-white font-semibold mb-3">분석된 레포지토리</h2>
+        
+        <!-- 내 분석된 레포지토리 -->
+        {% if my_repos_analyzed %}
+        <div class="mb-4">
+          <h3 class="text-gray-300 text-sm mb-2">My Analyzed Repositories</h3>
+          <ul class="space-y-2">
+            {% for repo in my_repos_analyzed %}
+              {% set repo_parts = repo.repo_url.replace('https://github.com/', '').split('/') %}
+              {% if repo_parts|length >= 2 %}
+                <li class="flex items-center repo-item group">
+                  <span class="w-3 h-3 mr-2 rounded-full bg-blue-500 flex-shrink-0" title="분석됨"></span>
+                  <button onclick="showRepoActionModal('{{ repo.repo_url }}', '{{ repo_parts[0] }}/{{ repo_parts[1] }}')" class="flex-1 text-left text-gray-300 hover:text-white text-sm truncate mr-2" title="{{ repo_parts[0] }}/{{ repo_parts[1] }} 작업 선택">{{ repo_parts[0] }}/{{ repo_parts[1] }}</button>
+                  <a href="{{ repo.repo_url }}" target="_blank" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-700" title="GitHub에서 보기">
+                    <span class="material-icons text-gray-400 hover:text-white text-sm">open_in_new</span>
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        
+        <!-- 다른 사람의 분석된 레포지토리 -->
+        {% if public_repos_analyzed %}
+        <div class="mb-4">
+          <h3 class="text-gray-300 text-sm mb-2">Public Repositories</h3>
+          <ul class="space-y-2">
+            {% for repo in public_repos_analyzed %}
+              {% set repo_parts = repo.repo_url.replace('https://github.com/', '').split('/') %}
+              {% if repo_parts|length >= 2 %}
+                <li class="flex items-center repo-item group">
+                  <span class="w-3 h-3 mr-2 rounded-full bg-green-500 flex-shrink-0" title="Public 분석됨"></span>
+                  <button onclick="showRepoActionModal('{{ repo.repo_url }}', '{{ repo_parts[0] }}/{{ repo_parts[1] }}')" class="flex-1 text-left text-gray-300 hover:text-white text-sm truncate mr-2" title="{{ repo_parts[0] }}/{{ repo_parts[1] }} 작업 선택">{{ repo_parts[0] }}/{{ repo_parts[1] }}</button>
+                  <a href="{{ repo.repo_url }}" target="_blank" class="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-gray-700" title="GitHub에서 보기">
+                    <span class="material-icons text-gray-400 hover:text-white text-sm">open_in_new</span>
+                  </a>
+                </li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+      
+      <!-- 다른 사이드바 메뉴 항목들 (필요시 추가) -->
+    </div>
+  </div>
+  {% endif %}
+  <!-- 메인 컨텐츠 -->
+  <div class="flex-1">
+<main class="flex-1 flex flex-row items-start justify-center p-8">
+  <!-- 왼쪽: 입력 폼 영역 -->
+  <div class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg p-6 mt-8 shadow-lg mr-6">
+    <h2 class="mb-5 text-2xl font-bold text-white">GitHub AI 코드 분석 챗봇</h2>
+    <form id="analyze-form" class="space-y-5">
+      <div>
+        <label for="repo-url" class="block mb-2 text-sm font-medium text-gray-200">GitHub 저장소 URL</label>
+        <input type="url" class="w-full bg-gray-700 border border-gray-600 text-gray-200 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" id="repo-url" name="repo_url" placeholder="https://github.com/username/repository" required>
+      </div>
+      <div>
+        <label for="token" class="block mb-2 text-sm font-medium text-gray-200">Personal Access Token (선택)</label>
+        <input type="password" class="w-full bg-gray-700 border border-gray-600 text-gray-200 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500" id="token" name="token" placeholder="ghp_xxxxxxxxxxxxxxxx">
+      </div>
+      <button type="submit" class="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-all duration-200">
+        <span class="material-icons mr-2">search</span> 프로젝트 분석 시작
+      </button>
+    </form>
+    <div id="status" class="mt-4 text-center text-red-400"></div>
+  </div>
+  
+  <!-- 오른쪽: 토큰 발급 방법 안내 -->
+  <div class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-lg p-6 mt-8 shadow-lg">
+    <h2 class="mb-4 text-xl font-bold text-white">GitHub 토큰 발급 방법</h2>
+    <div class="text-gray-300 space-y-4 text-sm">
+      <p class="mb-2">비공개 저장소를 분석하려면 GitHub Personal Access Token이 필요합니다.</p>
+      
+      <div class="bg-gray-700 p-4 rounded-md">
+        <h3 class="font-semibold text-white mb-2">토큰 발급 단계</h3>
+        <ol class="list-decimal list-inside space-y-2">
+          <li>GitHub 계정에 로그인합니다.</li>
+          <li>우측 상단의 프로필 아이콘을 클릭 후 <span class="text-blue-400">Settings</span>를 선택합니다.</li>
+          <li>좌측 하단 메뉴에서 <span class="text-blue-400">Developer settings</span>를 클릭합니다.</li>
+          <li><span class="text-blue-400">Personal access tokens</span> → <span class="text-blue-400">Tokens (classic)</span>을 선택합니다.</li>
+          <li><span class="text-blue-400">Generate new token</span> 버튼을 클릭합니다.</li>
+          <li>토큰 이름을 입력하고 <span class="text-blue-400">repo</span> 권한을 체크합니다.</li>
+          <li>페이지 하단의 <span class="text-blue-400">Generate token</span> 버튼을 클릭합니다.</li>
+          <li>생성된 토큰을 복사하여 위 입력창에 붙여넣습니다.</li>
+        </ol>
+      </div>
+      
+      <div class="bg-yellow-900 bg-opacity-40 p-3 rounded-md border border-yellow-700">
+        <p class="text-yellow-300 flex items-start">
+          <span class="material-icons mr-2 text-yellow-400">warning</span>
+          <span>토큰은 생성 직후 한 번만 표시됩니다. 안전한 곳에 보관하세요.</span>
+        </p>
+      </div>
+    </div>
+  </div>
+  <!-- 레포지토리 작업 선택 모달 -->
+  <div id="repo-action-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" style="display:none">
+    <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 max-w-md w-full mx-4">
+      <h3 class="text-xl font-bold text-white mb-4" id="modal-repo-name">레포지토리 작업 선택</h3>
+      <p class="text-gray-300 mb-6">이 레포지토리로 무엇을 하시겠습니까?</p>
+      
+      <div class="space-y-3">
+        <button id="analyze-repo-btn" class="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition-all duration-200">
+          <span class="material-icons mr-2">search</span>
+          AI 분석 시작하기
+        </button>
+        
+        <button id="goto-github-btn" class="w-full flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-4 rounded-md transition-all duration-200">
+          <span class="material-icons mr-2">open_in_new</span>
+          GitHub에서 보기
+        </button>
+        
+        <button onclick="closeRepoActionModal()" class="w-full flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold py-3 px-4 rounded-md transition-all duration-200">
+          <span class="material-icons mr-2">close</span>
+          취소
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSS 애니메이션 로딩 오버레이 -->
+  <div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" style="display:none">
+    <div class="flex flex-col items-center">
+      <div class="loader mb-12"></div>
+      <div id="progress-container" class="mt-4 w-full max-w-2xl mx-auto text-center">
+        <div id="progress-status" class="text-2xl text-gray-200 font-bold mb-4">프로젝트를 분석 중입니다...</div>
+        <div class="w-full bg-gray-700 rounded-full h-10 overflow-hidden">
+          <div id="progress-bar" class="bg-blue-500 h-10 text-xl font-extrabold flex items-center justify-center transition-all duration-300" style="width:0%">0%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+<script>
+        // 공통 분석 함수
+        async function performAnalysis(repoUrl, token = '') {
+            console.log('performAnalysis 호출됨');
+            console.log('repoUrl:', repoUrl);
+            console.log('token:', token);
+            console.log('repoUrl 타입:', typeof repoUrl);
+            console.log('repoUrl 길이:', repoUrl ? repoUrl.length : 'null/undefined');
+            
+            if (!repoUrl || repoUrl.trim() === '') {
+                console.error('performAnalysis: repoUrl이 비어있습니다!');
+                alert('레포지토리 URL이 비어있습니다. 다시 시도해주세요.');
+                return;
+            }
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            document.getElementById('status').innerText = '분석 중...';
+            document.getElementById('progress-bar').style.width = '0%';
+            document.getElementById('progress-bar').innerText = '0%';
+            document.getElementById('progress-status').innerText = '분석 준비 중...';
+            
+            // 진행률이 멈추지 않도록 가상 진행률 업데이트 함수
+            let fakeProgress = 0;
+            let progressInterval = null;
+            
+            const startFakeProgress = () => {
+                progressInterval = setInterval(() => {
+                    // 실제 진행 상황이 없을 때 10%에서 멈추지 않고 천천히 진행
+                    if (fakeProgress < 90) {
+                        // 처음에는 빠르게 10%까지 증가, 그 후 천천히 증가
+                        const increment = fakeProgress < 10 ? 1 : 0.2;
+                        fakeProgress += increment;
+                        
+                        // 진행률 표시 업데이트
+                        const displayProgress = Math.floor(fakeProgress);
+                        document.getElementById('progress-bar').style.width = `${displayProgress}%`;
+                        document.getElementById('progress-bar').innerText = `${displayProgress}%`;
+                        
+                        // 진행 상태 메시지 업데이트
+                        if (displayProgress < 10) {
+                            document.getElementById('progress-status').innerText = '저장소 정보 수집 중...';
+                        } else if (displayProgress < 30) {
+                            document.getElementById('progress-status').innerText = '파일 구조 분석 중...';
+                        } else if (displayProgress < 50) {
+                            document.getElementById('progress-status').innerText = '코드 청크 생성 중...';
+                        } else if (displayProgress < 70) {
+                            document.getElementById('progress-status').innerText = '임베딩 생성 중...';
+                        } else {
+                            document.getElementById('progress-status').innerText = '분석 데이터 처리 중...';
+                        }
+                    }
+                }, 300);
+            };
+            
+            const stopFakeProgress = () => {
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                }
+            };
+            
+            try {
+                // 가상 진행률 시작
+                startFakeProgress();
+                
+                const res = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        repo_url: repoUrl,
+                        token: token
+                    })
+                });
+                
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    
+                    // 토큰이 필요한 경우 처리
+                    if (errorData.error === 'private_repo_needs_token') {
+                        stopFakeProgress();
+                        document.getElementById('loading-overlay').style.display = 'none';
+                        
+                        const token = prompt('이 레포지토리는 비공개입니다. GitHub Personal Access Token을 입력해주세요:');
+                        if (token && token.trim()) {
+                            // 토큰을 입력받았으면 다시 분석 시도
+                            await performAnalysis(repoUrl, token.trim());
+                            return;
+                        } else {
+                            document.getElementById('status').innerText = '토큰이 필요한 비공개 레포지토리입니다.';
+                            return;
+                        }
+                    }
+                    
+                    throw new Error(errorData.error || '서버 오류');
+                }
+                
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let sessionId = null;
+                
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    
+                    const text = decoder.decode(value);
+                    const lines = text.split('\n').filter(line => line.trim());
+                    
+                    for (const line of lines) {
+                        try {
+                            const data = JSON.parse(line);
+                            
+                            // 실제 진행률이 있으면 가상 진행률 중지하고 실제 진행률 표시
+                            if (data.progress >= 0) {
+                                stopFakeProgress(); // 실제 진행률이 오면 가상 진행률 중지
+                                
+                                // 실제 진행률이 가상 진행률보다 낮으면 무시 (진행률이 뒤로 가지 않도록)
+                                if (data.progress > fakeProgress) {
+                                    document.getElementById('progress-bar').style.width = `${data.progress}%`;
+                                    document.getElementById('progress-bar').innerText = `${data.progress}%`;
+                                    fakeProgress = data.progress; // 실제 진행률 저장
+                                }
+                                
+                                if (data.status) {
+                                    document.getElementById('progress-status').innerText = data.status;
+                                }
+                            }
+                            
+                            if (data.error) {
+                                throw new Error(data.error);
+                            }
+                            
+                            if (data.progress === 100 && data.session_id) {
+                                sessionId = data.session_id;
+                                console.log("세션 ID 수신:", sessionId);
+                                // 이미 분석된 레포지토리에 대한 메시지가 있으면 표시
+                                if (data.message) {
+                                    document.getElementById('progress-status').innerText = data.message;
+                                    // 3초간 메시지 표시 후 이동
+                                    setTimeout(() => {
+                                        window.location.href = `/chat/${sessionId}`;
+                                    }, 1500);
+                                } else {
+                                    window.location.href = `/chat/${sessionId}`;
+                                }
+                            }
+                        } catch (parseError) {
+                            console.error('JSON 파싱 오류:', parseError, line);
+                        }
+                    }
+                }
+                if (sessionId) {
+                    // 세션 ID가 있지만 아직 리다이렉트되지 않은 경우
+                    if (!window.location.href.includes(`/chat/${sessionId}`)) {
+                    window.location.href = `/chat/${sessionId}`;
+                    }
+                } else {
+                    console.error('세션 ID를 받지 못했습니다. 서버 로그를 확인해 주세요.');
+                    document.getElementById('progress-status').innerText = '세션 생성에 실패했습니다.';
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    document.getElementById('status').innerText = `오류: 세션 ID를 받지 못했습니다. 서버 로그를 확인하거나 GitHub URL이 올바른지 확인해 주세요.`;
+                }
+            } catch (error) {
+                stopFakeProgress(); // 오류 발생 시 가상 진행률 중지
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('status').innerText = `오류: ${error.message}`;
+                console.error('분석 오류:', error);
+            }
+        }
+        
+        // 레포지토리 작업 선택 모달 관련 변수
+        let currentRepoUrl = '';
+        let currentRepoName = '';
+        
+        // 레포지토리 작업 선택 모달 표시
+        function showRepoActionModal(repoUrl, repoName) {
+            console.log('showRepoActionModal 호출됨');
+            console.log('전달받은 repoUrl:', repoUrl);
+            console.log('전달받은 repoName:', repoName);
+            console.log('repoUrl 타입:', typeof repoUrl);
+            console.log('repoUrl 길이:', repoUrl ? repoUrl.length : 'null/undefined');
+            
+            currentRepoUrl = repoUrl;
+            currentRepoName = repoName;
+            
+            console.log('저장된 currentRepoUrl:', currentRepoUrl);
+            
+            document.getElementById('modal-repo-name').textContent = repoName;
+            document.getElementById('repo-action-modal').style.display = 'flex';
+            
+            // 버튼 이벤트 리스너 설정
+            document.getElementById('analyze-repo-btn').onclick = function() {
+                console.log('분석 버튼 클릭됨, currentRepoUrl:', currentRepoUrl);
+                const urlToAnalyze = currentRepoUrl; // URL을 미리 저장
+                closeRepoActionModal();
+                analyzeRepository(urlToAnalyze); // 저장된 URL 사용
+            };
+            
+            document.getElementById('goto-github-btn').onclick = function() {
+                console.log('GitHub 보기 버튼 클릭됨, currentRepoUrl:', currentRepoUrl);
+                const urlToOpen = currentRepoUrl; // URL을 미리 저장
+                closeRepoActionModal();
+                window.open(urlToOpen, '_blank');
+            };
+        }
+        
+        // 레포지토리 작업 선택 모달 닫기
+        function closeRepoActionModal() {
+            document.getElementById('repo-action-modal').style.display = 'none';
+            currentRepoUrl = '';
+            currentRepoName = '';
+        }
+        
+        // 모달 외부 클릭 시 닫기
+        document.getElementById('repo-action-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeRepoActionModal();
+            }
+        });
+        
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeRepoActionModal();
+            }
+        });
+        
+        // 레포지토리 분석 함수 (사이드바에서 호출)
+        async function analyzeRepository(repoUrl) {
+            console.log('레포지토리 분석 시작:', repoUrl);
+            console.log('repoUrl 타입:', typeof repoUrl);
+            console.log('repoUrl 길이:', repoUrl ? repoUrl.length : 'null/undefined');
+            
+            if (!repoUrl || repoUrl.trim() === '') {
+                console.error('repoUrl이 비어있습니다!');
+                alert('레포지토리 URL이 비어있습니다. 다시 시도해주세요.');
+                return;
+            }
+            
+            // 토큰은 서버에서 자동으로 세션에서 가져옴
+            await performAnalysis(repoUrl, '');
+        }
+        
+        // 폼 제출 이벤트 핸들러
+        document.getElementById('analyze-form').onsubmit = async function(e) {
+            e.preventDefault();
+            const repoUrl = document.getElementById('repo-url').value;
+            const token = document.getElementById('token').value;
+            await performAnalysis(repoUrl, token);
+        }
+        
+        // 레포지토리 검색 기능
+        document.getElementById('repo-search-input').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const repoItems = document.querySelectorAll('.repo-item');
+            
+            repoItems.forEach(item => {
+                const button = item.querySelector('button');
+                if (button) {
+                    const repoName = button.textContent.toLowerCase();
+                    if (repoName.includes(searchTerm)) {
+                        item.style.display = 'flex';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                }
+            });
+        });
+</script>
+</body>
+</html> 
