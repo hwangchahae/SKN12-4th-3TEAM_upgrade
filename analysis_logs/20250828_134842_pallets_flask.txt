@@ -1,0 +1,310 @@
+================================================================================
+GitHub 저장소 분석 결과 로그 (기록용)
+================================================================================
+분석 시간: 2025-08-28 13:48:42
+저장소 URL: https://github.com/pallets/flask
+세션 ID: e73a0ac2-eb31-4e03-b7a4-bb2071fd7932
+--------------------------------------------------------------------------------
+
+## 분석 결과 요약
+- 총 파일 수: 99개
+- 총 소요 시간: 1017.21초 (17.0분)
+
+## API 호출 통계
+- GitHub API 호출: 203회
+- OpenAI Embedding API 호출: 2024회
+- 총 API 호출: 2227회
+- 디렉토리 구조 크기: 5,360 문자, 285 줄
+
+--------------------------------------------------------------------------------
+
+## 디렉토리 구조
+📁 .devcontainer
+  📄 devcontainer.json
+  📄 on-create-command.sh
+📁 .github
+  📁 ISSUE_TEMPLATE
+    📄 bug-report.md
+    📄 config.yml
+    📄 feature-request.md
+  📁 workflows
+    📄 lock.yaml
+    📄 pre-commit.yaml
+    📄 publish.yaml
+    📄 tests.yaml
+  📄 pull_request_template.md
+📁 docs
+  📁 _static
+    📄 debugger.png
+    📄 flask-icon.svg
+    📄 flask-logo.svg
+    📄 flask-name.svg
+    📄 pycharm-run-config.png
+  📁 deploying
+    📄 apache-httpd.rst
+    📄 asgi.rst
+    📄 eventlet.rst
+    📄 gevent.rst
+    📄 gunicorn.rst
+    📄 index.rst
+    📄 mod_wsgi.rst
+    📄 nginx.rst
+    📄 proxy_fix.rst
+    📄 uwsgi.rst
+    📄 waitress.rst
+  📁 patterns
+    📄 appdispatch.rst
+    📄 appfactories.rst
+    📄 caching.rst
+    📄 celery.rst
+    📄 deferredcallbacks.rst
+    📄 favicon.rst
+    📄 fileuploads.rst
+    📄 flashing.rst
+    📄 index.rst
+    📄 javascript.rst
+    📄 jquery.rst
+    📄 lazyloading.rst
+    📄 methodoverrides.rst
+    📄 mongoengine.rst
+    📄 packages.rst
+    📄 requestchecksum.rst
+    📄 singlepageapplications.rst
+    📄 sqlalchemy.rst
+    📄 sqlite3.rst
+    📄 streaming.rst
+    📄 subclassing.rst
+    📄 templateinheritance.rst
+    📄 urlprocessors.rst
+    📄 viewdecorators.rst
+    📄 wtforms.rst
+  📁 tutorial
+    📄 blog.rst
+    📄 database.rst
+    📄 deploy.rst
+    📄 factory.rst
+    📄 flaskr_edit.png
+    📄 flaskr_index.png
+    📄 flaskr_login.png
+    📄 index.rst
+    📄 install.rst
+    📄 layout.rst
+    📄 next.rst
+    📄 static.rst
+    📄 templates.rst
+    📄 tests.rst
+    📄 views.rst
+  📄 Makefile
+  📄 api.rst
+  📄 appcontext.rst
+  📄 async-await.rst
+  📄 blueprints.rst
+  📄 changes.rst
+  📄 cli.rst
+  📄 conf.py
+  📄 config.rst
+  📄 contributing.rst
+  📄 debugging.rst
+  📄 design.rst
+  📄 errorhandling.rst
+  📄 extensiondev.rst
+  📄 extensions.rst
+  📄 index.rst
+  📄 installation.rst
+  📄 license.rst
+  📄 lifecycle.rst
+  📄 logging.rst
+  📄 make.bat
+  📄 quickstart.rst
+  📄 reqcontext.rst
+  📄 server.rst
+  📄 shell.rst
+  📄 signals.rst
+  📄 templating.rst
+  📄 testing.rst
+  📄 views.rst
+  📄 web-security.rst
+📁 examples
+  📁 celery
+    📁 src
+      📁 task_app
+        📁 templates
+          📄 index.html
+        📄 __init__.py
+        📄 tasks.py
+        📄 views.py
+    📄 README.md
+    📄 make_celery.py
+    📄 pyproject.toml
+    📄 requirements.txt
+  📁 javascript
+    📁 js_example
+      📁 templates
+        📄 base.html
+        📄 fetch.html
+        📄 jquery.html
+        📄 xhr.html
+      📄 __init__.py
+      📄 views.py
+    📁 tests
+      📄 conftest.py
+      📄 test_js_example.py
+    📄 .gitignore
+    📄 LICENSE.txt
+    📄 README.rst
+    📄 pyproject.toml
+  📁 tutorial
+    📁 flaskr
+      📁 static
+        📄 style.css
+      📁 templates
+        📁 auth
+          📄 login.html
+          📄 register.html
+        📁 blog
+          📄 create.html
+          📄 index.html
+          📄 update.html
+        📄 base.html
+      📄 __init__.py
+      📄 auth.py
+      📄 blog.py
+      📄 db.py
+      📄 schema.sql
+    📁 tests
+      📄 conftest.py
+      📄 data.sql
+      📄 test_auth.py
+      📄 test_blog.py
+      📄 test_db.py
+      📄 test_factory.py
+    📄 .gitignore
+    📄 LICENSE.txt
+    📄 README.rst
+    📄 pyproject.toml
+📁 src
+  📁 flask
+    📁 json
+      📄 __init__.py
+      📄 provider.py
+      📄 tag.py
+    📁 sansio
+      📄 README.md
+      📄 app.py
+      📄 blueprints.py
+      📄 scaffold.py
+    📄 __init__.py
+    📄 __main__.py
+    📄 app.py
+    📄 blueprints.py
+    📄 cli.py
+    📄 config.py
+    📄 ctx.py
+    📄 debughelpers.py
+    📄 globals.py
+    📄 helpers.py
+    📄 logging.py
+    📄 py.typed
+    📄 sessions.py
+    📄 signals.py
+    📄 templating.py
+    📄 testing.py
+    📄 typing.py
+    📄 views.py
+    📄 wrappers.py
+📁 tests
+  📁 static
+    📄 config.json
+    📄 config.toml
+    📄 index.html
+  📁 templates
+    📁 nested
+      📄 nested.txt
+    📄 _macro.html
+    📄 context_template.html
+    📄 escaping_template.html
+    📄 mail.txt
+    📄 non_escaping_template.txt
+    📄 simple_template.html
+    📄 template_filter.html
+    📄 template_test.html
+  📁 test_apps
+    📁 blueprintapp
+      📁 apps
+        📁 admin
+          📁 static
+            📁 css
+              📄 test.css
+            📄 test.txt
+          📁 templates
+            📁 admin
+              📄 index.html
+          📄 __init__.py
+        📁 frontend
+          📁 templates
+            📁 frontend
+              📄 index.html
+          📄 __init__.py
+        📄 __init__.py
+      📄 __init__.py
+    📁 cliapp
+      📁 inner1
+        📁 inner2
+          📄 __init__.py
+          📄 flask.py
+        📄 __init__.py
+      📄 __init__.py
+      📄 app.py
+      📄 factory.py
+      📄 importerrorapp.py
+      📄 message.txt
+      📄 multiapp.py
+    📁 helloworld
+      📄 hello.py
+      📄 wsgi.py
+    📁 subdomaintestmodule
+      📁 static
+        📄 hello.txt
+      📄 __init__.py
+    📄 .env
+    📄 .flaskenv
+  📁 type_check
+    📄 typing_app_decorators.py
+    📄 typing_error_handler.py
+    📄 typing_route.py
+  📄 conftest.py
+  📄 test_appctx.py
+  📄 test_async.py
+  📄 test_basic.py
+  📄 test_blueprints.py
+  📄 test_cli.py
+  📄 test_config.py
+  📄 test_converters.py
+  📄 test_helpers.py
+  📄 test_instance_config.py
+  📄 test_json.py
+  📄 test_json_tag.py
+  📄 test_logging.py
+  📄 test_regression.py
+  📄 test_reqctx.py
+  📄 test_request.py
+  📄 test_session_interface.py
+  📄 test_signals.py
+  📄 test_subclassing.py
+  📄 test_templating.py
+  📄 test_testing.py
+  📄 test_user_error_handler.py
+  📄 test_views.py
+📄 .editorconfig
+📄 .gitignore
+📄 .pre-commit-config.yaml
+📄 .readthedocs.yaml
+📄 CHANGES.rst
+📄 LICENSE.txt
+📄 README.md
+📄 pyproject.toml
+📄 uv.lock
+
+--------------------------------------------------------------------------------
+로그 저장 시간: 2025-08-28 13:48:42
+================================================================================

@@ -31,9 +31,10 @@ import markdown
 import concurrent.futures
 import asyncio
 import sys
-import nbformat
-import time
-from datetime import datetime
+try:
+    import nbformat
+except ImportError:
+    nbformat = None
 
 # ----------------- 상수 정의 -----------------
 MAIN_EXTENSIONS = ['.py', '.js', '.md', '.ts', '.java', '.cpp', '.h', '.hpp', '.c', '.cs', '.txt','.ipynb']  # 분석할 주요 파일 확장자
@@ -45,87 +46,6 @@ KEY_FILE = ".key"  # 암호화 키 파일
 REPO_DB_PATH = "./repo_analysis_db"
 os.makedirs(REPO_DB_PATH, exist_ok=True)
 chroma_client = chromadb.PersistentClient(path=REPO_DB_PATH)
-
-# 분석 로그 디렉토리
-ANALYSIS_LOG_PATH = "./analysis_logs"
-os.makedirs(ANALYSIS_LOG_PATH, exist_ok=True)
-
-# API 호출 카운터 (전역 변수)
-api_call_counter = {
-    'github': 0,
-    'openai_embedding': 0,
-    'openai_chat': 0
-}
-
-def save_analysis_log(repo_url: str, file_count: int, directory_structure: str, total_time: float, session_id: str = None):
-    """
-    분석 결과를 텍스트 파일로 저장하는 함수
-    
-    Args:
-        repo_url (str): 분석한 저장소 URL
-        file_count (int): 분석된 파일 수
-        directory_structure (str): 디렉토리 구조
-        total_time (float): 총 소요 시간 (초)
-        session_id (str): 세션 ID
-    """
-    global api_call_counter
-    
-    try:
-        # 파일명 생성 (날짜_시간_저장소명.txt)
-        repo_name = repo_url.replace('https://github.com/', '').replace('/', '_')
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f"{timestamp}_{repo_name}.txt"
-        filepath = os.path.join(ANALYSIS_LOG_PATH, filename)
-        
-        # 로그 내용 작성 (기록용)
-        log_content = []
-        log_content.append("=" * 80)
-        log_content.append("GitHub 저장소 분석 결과 로그 (기록용)")
-        log_content.append("=" * 80)
-        log_content.append(f"분석 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        log_content.append(f"저장소 URL: {repo_url}")
-        log_content.append(f"세션 ID: {session_id if session_id else 'N/A'}")
-        log_content.append("-" * 80)
-        log_content.append("")
-        
-        log_content.append("## 분석 결과 요약")
-        log_content.append(f"- 총 파일 수: {file_count}개")
-        log_content.append(f"- 총 소요 시간: {total_time:.2f}초 ({total_time/60:.1f}분)")
-        
-        # API 호출 통계 추가
-        log_content.append("")
-        log_content.append("## API 호출 통계")
-        log_content.append(f"- GitHub API 호출: {api_call_counter.get('github', 0)}회")
-        log_content.append(f"- OpenAI Embedding API 호출: {api_call_counter.get('openai_embedding', 0)}회")
-        total_api_calls = sum(api_call_counter.values())
-        log_content.append(f"- 총 API 호출: {total_api_calls}회")
-        
-        if directory_structure:
-            dir_lines = directory_structure.count('\n') + 1
-            log_content.append(f"- 디렉토리 구조 크기: {len(directory_structure):,} 문자, {dir_lines} 줄")
-        
-        log_content.append("")
-        log_content.append("-" * 80)
-        log_content.append("")
-        
-        # 디렉토리 구조 추가
-        if directory_structure:
-            log_content.append("## 디렉토리 구조")
-            log_content.append(directory_structure)
-            log_content.append("")
-        
-        log_content.append("-" * 80)
-        log_content.append(f"로그 저장 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        log_content.append("=" * 80)
-        
-        # 파일로 저장
-        with open(filepath, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(log_content))
-        
-        print(f"[INFO] 분석 로그 저장 완료: {filepath}")
-        
-    except Exception as e:
-        print(f"[WARNING] 분석 로그 저장 실패: {e}")
 
 def analyze_repository(repo_url: str, token: Optional[str] = None, session_id: Optional[str] = None) -> Dict[str, Any]:
     """
@@ -139,18 +59,7 @@ def analyze_repository(repo_url: str, token: Optional[str] = None, session_id: O
     Returns:
         Dict[str, Any]: 분석 결과
     """
-    global api_call_counter
-    
-    # API 카운터 초기화
-    api_call_counter = {
-        'github': 0,
-        'openai_embedding': 0,
-        'openai_chat': 0
-    }
-    
     try:
-        # 분석 시작 시간 기록
-        start_time = time.time()
         print(f"[DEBUG] 저장소 분석 시작: {repo_url}")
         
         # ChromaDB 디렉토리 정리 (차원 불일치 문제 해결)
@@ -180,14 +89,6 @@ def analyze_repository(repo_url: str, token: Optional[str] = None, session_id: O
             embedder = RepositoryEmbedder(session_id)
             embedder.process_and_embed(files)
             print(f"[DEBUG] 임베딩 처리 완료")
-        
-
-        # 총 분석 시간 계산 및 출력
-        total_time = time.time() - start_time
-        print(f"[TIMING] 🎯 저장소 분석 완료 - 총 소요 시간: {total_time:.2f}초 ({total_time/60:.1f}분)")
-        
-        # 분석 결과를 텍스트 파일로 저장
-        save_analysis_log(repo_url, len(files), directory_structure, total_time, session_id)
         
         return {
             'success': True,
@@ -333,7 +234,6 @@ def get_repository_file_tree(repo_url: str, branch: str = 'main', token: Optiona
         print(f"[DEBUG] 헤더 존재: {'Authorization' in headers}")
         
         response = requests.get(url, headers=headers)
-        api_call_counter['github'] += 1  # GitHub API 호출 카운트
         print(f"[DEBUG] API 응답: status_code={response.status_code}")
         
         if response.status_code == 200:
@@ -423,7 +323,6 @@ def get_file_content(repo_url: str, file_path: str, branch: str = 'main', token:
         print(f"[DEBUG] 헤더 존재: {'Authorization' in headers}")
         
         response = requests.get(url, headers=headers)
-        api_call_counter['github'] += 1  # GitHub API 호출 카운트
         print(f"[DEBUG] API 응답: status_code={response.status_code}")
         
         if response.status_code == 200:
@@ -494,8 +393,9 @@ class GitHubRepositoryFetcher:
             session_id (Optional[str]): 세션 ID (기본값: owner_repo)
         """
         self.repo_url = repo_url
-        self.token = token
-        self.headers = {'Authorization': f'token {token}'} if token else {}
+        # 토큰이 없으면 환경 변수에서 가져오기
+        self.token = token or os.environ.get("GITHUB_TOKEN")
+        self.headers = {'Authorization': f'token {self.token}'} if self.token else {}
         self.files = []
         
         # 저장소 정보 추출
@@ -634,7 +534,6 @@ class GitHubRepositoryFetcher:
             
             # API 요청 실행
             response = requests.get(url, headers=headers)
-            api_call_counter['github'] += 1  # GitHub API 호출 카운트
             content = self.handle_github_response(response, path)
             
             # 응답 검증
@@ -672,7 +571,6 @@ class GitHubRepositoryFetcher:
             
             # API 요청 실행
             response = requests.get(url, headers=headers)
-            api_call_counter['github'] += 1  # GitHub API 호출 카운트
             content_data = self.handle_github_response(response, path)
             
             # 에러 체크
@@ -996,8 +894,9 @@ class RepositoryEmbedder:
     def process_and_embed(self, files: List[Dict[str, Any]]):
         # 내부 비동기 함수 정의
         async def async_process_and_embed(files):
-            from openai import AsyncOpenAI
+            import openai
             api_key = os.environ.get("OPENAI_API_KEY")
+            client = openai.AsyncClient(api_key=api_key)
             enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
             def safe_meta(meta):
                 return {k: ('' if v is None else v if not isinstance(v, (int, float, bool)) else v) for k, v in meta.items()}
@@ -1447,6 +1346,9 @@ class RepositoryEmbedder:
                 
                 return chunks
             def chunk_ipynb(ipynb_text):
+                if nbformat is None:
+                    # nbformat이 없으면 기본 텍스트로 처리
+                    return [(ipynb_text, 0, len(enc.encode(ipynb_text)), None, "ipynb", 1, len(ipynb_text.splitlines()))]
                 try:
                     nb = nbformat.reads(ipynb_text, as_version=4)
                 except Exception as e:
@@ -1540,7 +1442,6 @@ class RepositoryEmbedder:
                         input=chunk,
                         model="text-embedding-3-large"
                     )
-                    api_call_counter['openai_embedding'] += 1  # OpenAI Embedding API 호출 카운트
                     embedding = emb_resp.data[0].embedding
                 except Exception as e:
                     print(f"[WARNING] 임베딩 실패: {e}")
@@ -1561,17 +1462,14 @@ class RepositoryEmbedder:
                     print(f"[WARNING] 역할 태깅 실패: {e}")
                     role_tag = ''
                 return (embedding, role_tag, chunk, file, i, t_start, t_end, func_name, class_name, start_line, end_line)
-            # 3. 비동기 병렬 실행 (max_concurrent=20) - async context manager 사용
+            # 3. 비동기 병렬 실행 (max_concurrent=20)
             print(f"[DEBUG] 임베딩+역할태깅 asyncio 병렬 처리 시작 (청크 수: {len(all_chunks)})")
-            
-            async with AsyncOpenAI(api_key=api_key) as client:
-                semaphore = asyncio.Semaphore(20)
-                async def sem_task(args):
-                    async with semaphore:
-                        return await embed_and_tag_async(args, client)
-                tasks = [asyncio.create_task(sem_task(args)) for args in all_chunks]
-                results = await asyncio.gather(*tasks, return_exceptions=False)
-            
+            semaphore = asyncio.Semaphore(20)
+            async def sem_task(args):
+                async with semaphore:
+                    return await embed_and_tag_async(args, client)
+            tasks = [sem_task(args) for args in all_chunks]
+            results = await asyncio.gather(*tasks)
             print(f"[DEBUG] 임베딩+역할태깅 asyncio 병렬 처리 완료")
             # 4. DB 저장 (동기)
             successful_saves = 0
@@ -1626,7 +1524,7 @@ class RepositoryEmbedder:
             
             # 전체 처리 완료 요약 로그
             print(f"[INFO] 임베딩 처리 완료: 총 {successful_saves}개 청크 저장")
-        # 동기 함수에서 비동기 실행 - asyncio.run 사용
+        # 동기 함수에서 비동기 실행
         if sys.version_info >= (3, 7):
             asyncio.run(async_process_and_embed(files))
         else:
