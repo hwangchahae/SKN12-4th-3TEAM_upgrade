@@ -81,7 +81,7 @@ def save_analysis_log(repo_url: str, file_count: int, directory_structure: str, 
         # 로그 내용 작성 (기록용)
         log_content = []
         log_content.append("=" * 80)
-        log_content.append("v6 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 + DB배치저장(기록용)")
+        log_content.append("v5 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 (기록용)")
         log_content.append("=" * 80)
         log_content.append(f"분석 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         log_content.append(f"저장소 URL: {repo_url}")
@@ -1661,30 +1661,29 @@ class RepositoryEmbedder:
                 results = await batch_embed_chunks(all_chunks, client)
             
             print(f"[DEBUG] 배치 임베딩 완료: {len(results)}개 청크 처리")
-            # 4. DB 배치 저장 (성능 개선)
+            # 4. DB 저장 (동기)
             successful_saves = 0
-            batch_size = 100  # 한 번에 저장할 최대 크기
-            
-            # 배치 데이터 저장용 리스트
-            batch_ids = []
-            batch_embeddings = []
-            batch_documents = []
-            batch_metadatas = []
-            
             for embedding, role_tag, chunk, file, i, t_start, t_end, func_name, class_name, start_line, end_line in results:
                 file_name = file.get('file_name')
                 file_type = file.get('file_type')
                 sha = file.get('sha')
                 source_url = file.get('source_url')
                 path = file['path']
-                
-                # 청크 타입 결정
+                # 청크 타입 결정 (class, method, function, code)  
                 chunk_type = "class" if class_name and not func_name else \
                             "method" if class_name and func_name else \
                             "function" if func_name and not class_name else \
                             "code"
                 
-                # 메타데이터 생성
+                # 복잡도 추정 (청크 크기 기반)
+                complexity = 0
+                parent_entity = None
+                inheritance = None
+                
+                # 청크 튜플에서 추가 메타데이터 추출 (새 형식인 경우)
+                # chunk_data 변수는 이 스코프에 없으므로 사용하지 않음
+                # 대신 현재 언패킹된 값들을 사용
+                
                 metadata = {
                     "path": path or '',
                     "file_name": file_name or '',
@@ -1700,82 +1699,21 @@ class RepositoryEmbedder:
                     "token_end": t_end if t_end is not None else -1,
                     "role_tag": role_tag,
                     "chunk_type": chunk_type,
-                    "complexity": 1,
-                    "parent_entity": '',
-                    "inheritance": ''
+                    "complexity": complexity or 1,
+                    "parent_entity": parent_entity or '',
+                    "inheritance": inheritance or ''
                 }
-                
-                # 배치에 추가
-                batch_ids.append(f"{path}_{i}")
-                batch_embeddings.append(embedding)
-                batch_documents.append(chunk)
-                batch_metadatas.append(safe_meta(metadata))
-                
-                # 배치가 가득 차면 DB에 저장
-                if len(batch_ids) >= batch_size:
-                    try:
-                        self.collection.add(
-                            ids=batch_ids,
-                            embeddings=batch_embeddings,
-                            documents=batch_documents,
-                            metadatas=batch_metadatas
-                        )
-                        successful_saves += len(batch_ids)
-                        print(f"[DEBUG] DB 배치 저장: {successful_saves}개 청크")
-                        
-                        # 배치 초기화
-                        batch_ids = []
-                        batch_embeddings = []
-                        batch_documents = []
-                        batch_metadatas = []
-                    except Exception as e:
-                        print(f"[WARNING] DB 배치 저장 실패: {e}")
-                        # 실패 시 개별 저장으로 폴백
-                        for j in range(len(batch_ids)):
-                            try:
-                                self.collection.add(
-                                    ids=[batch_ids[j]],
-                                    embeddings=[batch_embeddings[j]],
-                                    documents=[batch_documents[j]],
-                                    metadatas=[batch_metadatas[j]]
-                                )
-                                successful_saves += 1
-                            except:
-                                pass
-                        # 배치 초기화
-                        batch_ids = []
-                        batch_embeddings = []
-                        batch_documents = []
-                        batch_metadatas = []
-            
-            # 마지막 남은 배치 저장
-            if batch_ids:
-                try:
-                    self.collection.add(
-                        ids=batch_ids,
-                        embeddings=batch_embeddings,
-                        documents=batch_documents,
-                        metadatas=batch_metadatas
-                    )
-                    successful_saves += len(batch_ids)
-                    print(f"[DEBUG] DB 최종 배치 저장: {len(batch_ids)}개 청크")
-                except Exception as e:
-                    print(f"[WARNING] DB 최종 배치 저장 실패: {e}")
-                    # 개별 저장으로 폴백
-                    for j in range(len(batch_ids)):
-                        try:
-                            self.collection.add(
-                                ids=[batch_ids[j]],
-                                embeddings=[batch_embeddings[j]],
-                                documents=[batch_documents[j]],
-                                metadatas=[batch_metadatas[j]]
-                            )
-                            successful_saves += 1
-                        except:
-                            pass
+                self.collection.add(
+                    ids=[f"{path}_{i}"],
+                    embeddings=[embedding],
+                    documents=[chunk],
+                    metadatas=[safe_meta(metadata)]
+                )
+                # DB 저장 로그를 개별 로그 대신 요약으로 처리
+                successful_saves += 1
             
             # 전체 처리 완료 요약 로그
-            print(f"[INFO] DB 저장 완료: 총 {successful_saves}개 청크 저장")
+            print(f"[INFO] 임베딩 처리 완료: 총 {successful_saves}개 청크 저장")
         # 동기 함수에서 비동기 실행 - asyncio.run 사용
         if sys.version_info >= (3, 7):
             asyncio.run(async_process_and_embed(files))

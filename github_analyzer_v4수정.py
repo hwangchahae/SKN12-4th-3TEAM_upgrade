@@ -28,7 +28,7 @@ from cryptography.fernet import Fernet
 import tiktoken
 import ast
 import markdown
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import concurrent.futures
 import asyncio
 import sys
 import nbformat
@@ -44,7 +44,6 @@ KEY_FILE = ".key"  # 암호화 키 파일
 # ChromaDB 영구 저장소 클라이언트
 REPO_DB_PATH = "./repo_analysis_db"
 os.makedirs(REPO_DB_PATH, exist_ok=True)
-# ChromaDB 영구 저장소 클라이언트
 chroma_client = chromadb.PersistentClient(path=REPO_DB_PATH)
 
 # 분석 로그 디렉토리
@@ -81,7 +80,7 @@ def save_analysis_log(repo_url: str, file_count: int, directory_structure: str, 
         # 로그 내용 작성 (기록용)
         log_content = []
         log_content.append("=" * 80)
-        log_content.append("v6 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 + DB배치저장(기록용)")
+        log_content.append("GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 (기록용)")
         log_content.append("=" * 80)
         log_content.append(f"분석 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         log_content.append(f"저장소 URL: {repo_url}")
@@ -746,49 +745,29 @@ class GitHubRepositoryFetcher:
         return self.get_repo_directory_as_documents()
 
     def get_all_main_files(self, path=""):
-        """재귀적으로 모든 주요 파일 경로를 수집 (병렬 처리 적용)"""
         files = []
         dir_contents = self.get_repo_directory_contents(path)
+        print(f"[DEBUG] get_all_main_files - path: {path}, dir_contents type: {type(dir_contents)}")
         
         if isinstance(dir_contents, dict) and dir_contents.get('error'):
             print(f"[ERROR] get_all_main_files - API 오류: {dir_contents}")
             return files
             
         if isinstance(dir_contents, list):
-            # 파일과 디렉토리 분리
-            direct_files = []
-            subdirs = []
-            
+            print(f"[DEBUG] get_all_main_files - 디렉토리 항목 수: {len(dir_contents)}")
             for item in dir_contents:
+                print(f"[DEBUG] get_all_main_files - 항목: {item.get('name', 'Unknown')}, 타입: {item.get('type', 'Unknown')}")
                 if item['type'] == 'file' and any(item['path'].endswith(ext) for ext in MAIN_EXTENSIONS):
-                    direct_files.append(item['path'])
+                    files.append(item['path'])
+                    print(f"[DEBUG] get_all_main_files - 주요 파일 추가: {item['path']}")
                 elif item['type'] == 'dir':
-                    subdirs.append(item['path'])
+                    sub_files = self.get_all_main_files(item['path'])
+                    files.extend(sub_files)
+                    print(f"[DEBUG] get_all_main_files - 하위 디렉토리에서 {len(sub_files)}개 파일 추가")
+        else:
+            print(f"[WARNING] get_all_main_files - 예상치 못한 응답 타입: {type(dir_contents)}")
             
-            # 현재 디렉토리의 파일 추가
-            files.extend(direct_files)
-            
-            # 하위 디렉토리를 병렬로 탐색
-            if subdirs:
-                with ThreadPoolExecutor(max_workers=10) as executor:
-                    # 각 하위 디렉토리에 대한 작업 제출
-                    future_to_dir = {
-                        executor.submit(self.get_all_main_files, subdir): subdir 
-                        for subdir in subdirs
-                    }
-                    
-                    # 완료된 작업 처리
-                    for future in as_completed(future_to_dir):
-                        subdir = future_to_dir[future]
-                        try:
-                            sub_files = future.result(timeout=30)
-                            files.extend(sub_files)
-                        except Exception as e:
-                            print(f"[WARNING] 하위 디렉토리 탐색 실패 {subdir}: {e}")
-            
-            if path == "":  # 루트 디렉토리인 경우만 로그
-                print(f"[DEBUG] 전체 파일 수집 완료: {len(files)}개 파일")
-        
+        print(f"[DEBUG] get_all_main_files - 최종 파일 수: {len(files)}")
         return files
 
     def filter_main_files(self):
@@ -798,62 +777,36 @@ class GitHubRepositoryFetcher:
 
     def get_file_contents(self) -> List[Dict[str, Any]]:
         """
-        주요 파일의 내용을 병렬로 읽어 딕셔너리 리스트로 반환
-        ThreadPoolExecutor를 사용하여 GitHub API 호출을 병렬화
+        주요 파일의 내용을 읽어 딕셔너리 리스트로 반환
         Returns:
             List[Dict[str, Any]]: 
                 파일 경로와 내용을 포함하는 딕셔너리 리스트
                 [{'path': '...', 'content': '...', 'file_name': ..., 'file_type': ..., 'sha': ..., 'source_url': ...}, ...]
         """
         file_objs = []
-        
-        # 큰 파일 필터링
-        filtered_paths = [
-            path for path in self.files
-            if not any(pattern in path.lower() for pattern in ['.min.js', '.min.css', 'bootstrap.min', 'jquery.min'])
-        ]
-        
-        print(f"[DEBUG] 병렬 파일 내용 가져오기 시작: {len(filtered_paths)}개 파일")
-        
-        # ThreadPoolExecutor로 병렬 처리 (최대 30개 동시 실행)
-        with ThreadPoolExecutor(max_workers=30) as executor:
-            # 각 파일에 대한 작업 제출
-            future_to_path = {
-                executor.submit(self.get_repo_content_as_document, path): path 
-                for path in filtered_paths
-            }
-            
-            # 완료된 작업부터 순차적으로 처리
-            completed_count = 0
-            for future in as_completed(future_to_path):
-                path = future_to_path[future]
-                try:
-                    doc = future.result(timeout=10)  # 10초 타임아웃
-                    if doc:
-                        # 내용 크기 확인
-                        content_size = len(doc.page_content)
-                        if content_size > 100000:  # 100KB 이상 파일 제외
-                            print(f"[DEBUG] 큰 파일 제외 (크기: {content_size}): {path}")
-                            continue
-                        
-                        meta = doc.metadata
-                        file_objs.append({
-                            'path': path,
-                            'content': doc.page_content,
-                            'file_name': meta.get('file_name'),
-                            'file_type': meta.get('file_name', '').split('.')[-1] if meta.get('file_name') else '',
-                            'sha': meta.get('sha'),
-                            'source_url': meta.get('source'),
-                        })
+        for path in self.files:
+            # 큰 파일 제외 (minified JS, CSS 등)
+            if any(pattern in path.lower() for pattern in ['.min.js', '.min.css', 'bootstrap.min', 'jquery.min']):
+                print(f"[DEBUG] 큰 파일 제외: {path}")
+                continue
+                
+            doc = self.get_repo_content_as_document(path)
+            if doc:
+                # 내용 크기 확인
+                content_size = len(doc.page_content)
+                if content_size > 100000:  # 100KB 이상 파일 제외
+                    print(f"[DEBUG] 큰 파일 제외 (크기: {content_size}): {path}")
+                    continue
                     
-                    completed_count += 1
-                    if completed_count % 50 == 0:
-                        print(f"[DEBUG] 파일 내용 가져오기 진행: {completed_count}/{len(filtered_paths)}")
-                        
-                except Exception as e:
-                    print(f"[WARNING] 파일 가져오기 실패 {path}: {e}")
-        
-        print(f"[DEBUG] 병렬 파일 내용 가져오기 완료: {len(file_objs)}개 성공")
+                meta = doc.metadata
+                file_objs.append({
+                    'path': path,
+                    'content': doc.page_content,
+                    'file_name': meta.get('file_name'),
+                    'file_type': meta.get('file_name', '').split('.')[-1] if meta.get('file_name') else '',
+                    'sha': meta.get('sha'),
+                    'source_url': meta.get('source'),
+                })
         return file_objs
 
     def generate_directory_structure(self) -> str:
@@ -1564,127 +1517,75 @@ class RepositoryEmbedder:
                 # 파일별 청크 수 요약 로그 (과도한 개별 로그 대신)
                 if processed_chunks:
                     print(f"[DEBUG] 파일 청킹 완료: {file.get('path')} - {len(processed_chunks)}개 청크")
-            # 2. 배치 임베딩 함수 (대폭 개선)
-            async def batch_embed_chunks(chunks_data, client):
-                """
-                청크를 배치로 임베딩 (API 호출 최소화 + 병렬 처리)
-                동적 배치 크기 + 병렬 배치 처리
-                """
-                # 최적화된 배치 크기: 50개 (Rate Limit 안전 + 높은 동시성)
-                total_chunks = len(chunks_data)
-                batch_size = 50  # 모든 저장소에 50개 배치 사용
+            # 2. 비동기 임베딩+역할태깅 함수
+            async def embed_and_tag_async(args, client):
+                chunk, file, i, t_start, t_end, func_name, class_name, start_line, end_line = args
                 
-                print(f"[INFO] 동적 배치 크기: {batch_size}개 (전체 {total_chunks}개 청크)")
+                # 청크 크기 확인 및 분할 (8192 토큰 제한)
+                chunk_tokens = len(enc.encode(chunk))
+                if chunk_tokens > 8000:  # 안전 마진
+                    print(f"[WARNING] 청크가 너무 큼 ({chunk_tokens} 토큰), 분할 처리: {file.get('path')}")
+                    # 큰 청크를 작은 청크로 분할
+                    sub_chunks = split_by_tokens(chunk, max_tokens=4000, overlap=200)
+                    # 첫 번째 서브청크만 사용 (또는 전체를 건너뛸 수 있음)
+                    if sub_chunks:
+                        chunk = sub_chunks[0][0]  # 첫 번째 서브청크의 텍스트
+                    else:
+                        # 분할도 실패하면 기본 임베딩 사용
+                        embedding = [0.0] * 3072
+                        return (embedding, "큰 파일 - 분석 생략", chunk[:1000], file, i, t_start, t_end, func_name, class_name, start_line, end_line)
                 
-                # 배치 분할
-                batches = []
-                for batch_start in range(0, total_chunks, batch_size):
-                    batch_end = min(batch_start + batch_size, total_chunks)
-                    batch = chunks_data[batch_start:batch_end]
-                    batches.append((batch_start, batch_end, batch))
-                
-                # 각 배치를 처리하는 비동기 함수
-                async def process_single_batch(batch_info):
-                    batch_start, batch_end, batch = batch_info
-                    batch_results = []
-                    
-                    # 배치의 모든 텍스트 추출
-                    texts = []
-                    for chunk_data in batch:
-                        chunk = chunk_data[0]
-                        chunk_tokens = len(enc.encode(chunk))
-                        if chunk_tokens > 8000:
-                            chunk = chunk[:8000]
-                        texts.append(chunk)
-                    
-                    # 배치 API 호출
-                    try:
-                        # Rate Limit 여유가 충분하므로 지연 최소화 (0.1초)
-                        await asyncio.sleep(0.1)
-                        
-                        api_call_counter['openai_embedding'] += 1
-                        emb_resp = await client.embeddings.create(
-                            input=texts,
-                            model="text-embedding-3-large"
-                        )
-                        embeddings = [e.embedding for e in emb_resp.data]
-                        
-                        for i, embedding in enumerate(embeddings):
-                            chunk_idx = batch_start + i
-                            chunk_data = chunks_data[chunk_idx]
-                            result = (embedding, '', chunk_data[0], chunk_data[1], chunk_data[2],
-                                    chunk_data[3], chunk_data[4], chunk_data[5], chunk_data[6],
-                                    chunk_data[7], chunk_data[8])
-                            batch_results.append(result)
-                        
-                        print(f"[DEBUG] 배치 {batch_start+1}-{batch_end} 완료 ({len(texts)}개)")
-                        
-                    except Exception as e:
-                        print(f"[WARNING] 배치 {batch_start+1}-{batch_end} 실패: {e}")
-                        for i in range(len(texts)):
-                            chunk_idx = batch_start + i
-                            chunk_data = chunks_data[chunk_idx]
-                            embedding = [0.0] * 3072
-                            result = (embedding, '', chunk_data[0], chunk_data[1], chunk_data[2],
-                                    chunk_data[3], chunk_data[4], chunk_data[5], chunk_data[6],
-                                    chunk_data[7], chunk_data[8])
-                            batch_results.append(result)
-                    
-                    return batch_results
-                
-                # 모든 배치를 병렬로 처리 (Rate Limit 고려)
-                import asyncio
-                # OpenAI Rate Limit 고려: 분당 500 요청 제한 (Tier 1)
-                # 배치 크기 50개 × 동시 5개 = 250개/번 (안전)
-                semaphore = asyncio.Semaphore(5)  # 최대 5개 배치 동시 처리
-                
-                async def process_with_semaphore(batch_info):
-                    async with semaphore:
-                        return await process_single_batch(batch_info)
-                
-                # 모든 배치 병렬 실행
-                tasks = [process_with_semaphore(batch_info) for batch_info in batches]
-                batch_results = await asyncio.gather(*tasks)
-                
-                # 결과 통합
-                results = []
-                for batch_result in batch_results:
-                    results.extend(batch_result)
-                
-                return results
-            # 3. 배치 임베딩 실행 (API 호출 대폭 감소)
-            print(f"[DEBUG] 배치 임베딩 시작 (전체 청크: {len(all_chunks)}개)")
-            print(f"[INFO] 예상 API 호출: {(len(all_chunks) + 99) // 100}회 (기존 {len(all_chunks)}회에서 감소)")
+                # 임베딩
+                try:
+                    api_call_counter['openai_embedding'] += 1  # API 호출 시도 즉시 카운트
+                    emb_resp = await client.embeddings.create(
+                        input=chunk,
+                        model="text-embedding-3-large"
+                    )
+                    embedding = emb_resp.data[0].embedding
+                except Exception as e:
+                    print(f"[WARNING] 임베딩 실패: {e}")
+                    # text-embedding-3-large는 3072차원
+                    embedding = [0.0] * 3072
+                # 역할 태깅은 나중에 필요할 때만 수행 (Lazy Loading)
+                role_tag = ''  # 초기에는 빈 문자열로 저장
+                return (embedding, role_tag, chunk, file, i, t_start, t_end, func_name, class_name, start_line, end_line)
+            # 3. 비동기 병렬 실행 (Semaphore 50으로 증가)
+            print(f"[DEBUG] 임베딩+역할태깅 asyncio 병렬 처리 시작 (청크 수: {len(all_chunks)})")
             
             async with AsyncOpenAI(api_key=api_key) as client:
-                # 배치 임베딩 함수 호출
-                results = await batch_embed_chunks(all_chunks, client)
+                # Semaphore를 50으로 증가 (v3의 20보다 2.5배)
+                semaphore = asyncio.Semaphore(50)
+                async def sem_task(args):
+                    async with semaphore:
+                        return await embed_and_tag_async(args, client)
+                tasks = [asyncio.create_task(sem_task(args)) for args in all_chunks]
+                results = await asyncio.gather(*tasks, return_exceptions=False)
             
-            print(f"[DEBUG] 배치 임베딩 완료: {len(results)}개 청크 처리")
-            # 4. DB 배치 저장 (성능 개선)
+            print(f"[DEBUG] 임베딩+역할태깅 asyncio 병렬 처리 완료")
+            # 4. DB 저장 (동기)
             successful_saves = 0
-            batch_size = 100  # 한 번에 저장할 최대 크기
-            
-            # 배치 데이터 저장용 리스트
-            batch_ids = []
-            batch_embeddings = []
-            batch_documents = []
-            batch_metadatas = []
-            
             for embedding, role_tag, chunk, file, i, t_start, t_end, func_name, class_name, start_line, end_line in results:
                 file_name = file.get('file_name')
                 file_type = file.get('file_type')
                 sha = file.get('sha')
                 source_url = file.get('source_url')
                 path = file['path']
-                
-                # 청크 타입 결정
+                # 청크 타입 결정 (class, method, function, code)  
                 chunk_type = "class" if class_name and not func_name else \
                             "method" if class_name and func_name else \
                             "function" if func_name and not class_name else \
                             "code"
                 
-                # 메타데이터 생성
+                # 복잡도 추정 (청크 크기 기반)
+                complexity = 0
+                parent_entity = None
+                inheritance = None
+                
+                # 청크 튜플에서 추가 메타데이터 추출 (새 형식인 경우)
+                # chunk_data 변수는 이 스코프에 없으므로 사용하지 않음
+                # 대신 현재 언패킹된 값들을 사용
+                
                 metadata = {
                     "path": path or '',
                     "file_name": file_name or '',
@@ -1700,82 +1601,21 @@ class RepositoryEmbedder:
                     "token_end": t_end if t_end is not None else -1,
                     "role_tag": role_tag,
                     "chunk_type": chunk_type,
-                    "complexity": 1,
-                    "parent_entity": '',
-                    "inheritance": ''
+                    "complexity": complexity or 1,
+                    "parent_entity": parent_entity or '',
+                    "inheritance": inheritance or ''
                 }
-                
-                # 배치에 추가
-                batch_ids.append(f"{path}_{i}")
-                batch_embeddings.append(embedding)
-                batch_documents.append(chunk)
-                batch_metadatas.append(safe_meta(metadata))
-                
-                # 배치가 가득 차면 DB에 저장
-                if len(batch_ids) >= batch_size:
-                    try:
-                        self.collection.add(
-                            ids=batch_ids,
-                            embeddings=batch_embeddings,
-                            documents=batch_documents,
-                            metadatas=batch_metadatas
-                        )
-                        successful_saves += len(batch_ids)
-                        print(f"[DEBUG] DB 배치 저장: {successful_saves}개 청크")
-                        
-                        # 배치 초기화
-                        batch_ids = []
-                        batch_embeddings = []
-                        batch_documents = []
-                        batch_metadatas = []
-                    except Exception as e:
-                        print(f"[WARNING] DB 배치 저장 실패: {e}")
-                        # 실패 시 개별 저장으로 폴백
-                        for j in range(len(batch_ids)):
-                            try:
-                                self.collection.add(
-                                    ids=[batch_ids[j]],
-                                    embeddings=[batch_embeddings[j]],
-                                    documents=[batch_documents[j]],
-                                    metadatas=[batch_metadatas[j]]
-                                )
-                                successful_saves += 1
-                            except:
-                                pass
-                        # 배치 초기화
-                        batch_ids = []
-                        batch_embeddings = []
-                        batch_documents = []
-                        batch_metadatas = []
-            
-            # 마지막 남은 배치 저장
-            if batch_ids:
-                try:
-                    self.collection.add(
-                        ids=batch_ids,
-                        embeddings=batch_embeddings,
-                        documents=batch_documents,
-                        metadatas=batch_metadatas
-                    )
-                    successful_saves += len(batch_ids)
-                    print(f"[DEBUG] DB 최종 배치 저장: {len(batch_ids)}개 청크")
-                except Exception as e:
-                    print(f"[WARNING] DB 최종 배치 저장 실패: {e}")
-                    # 개별 저장으로 폴백
-                    for j in range(len(batch_ids)):
-                        try:
-                            self.collection.add(
-                                ids=[batch_ids[j]],
-                                embeddings=[batch_embeddings[j]],
-                                documents=[batch_documents[j]],
-                                metadatas=[batch_metadatas[j]]
-                            )
-                            successful_saves += 1
-                        except:
-                            pass
+                self.collection.add(
+                    ids=[f"{path}_{i}"],
+                    embeddings=[embedding],
+                    documents=[chunk],
+                    metadatas=[safe_meta(metadata)]
+                )
+                # DB 저장 로그를 개별 로그 대신 요약으로 처리
+                successful_saves += 1
             
             # 전체 처리 완료 요약 로그
-            print(f"[INFO] DB 저장 완료: 총 {successful_saves}개 청크 저장")
+            print(f"[INFO] 임베딩 처리 완료: 총 {successful_saves}개 청크 저장")
         # 동기 함수에서 비동기 실행 - asyncio.run 사용
         if sys.version_info >= (3, 7):
             asyncio.run(async_process_and_embed(files))

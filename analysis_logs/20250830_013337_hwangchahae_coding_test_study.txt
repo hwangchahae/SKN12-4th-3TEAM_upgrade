@@ -1,0 +1,378 @@
+================================================================================
+v6 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 + DB배치저장(기록용)
+================================================================================
+분석 시간: 2025-08-30 01:33:37
+저장소 URL: https://github.com/hwangchahae/coding_test_study
+세션 ID: d04026d8-c89e-4c72-ad64-ed37dbc6fa78
+--------------------------------------------------------------------------------
+
+## 분석 결과 요약
+- 총 파일 수: 276개
+- 총 소요 시간: 34.56초 (0.6분)
+
+## API 호출 통계
+- GitHub API 호출: 416회
+- OpenAI Embedding API 호출: 10회
+- OpenAI Role Tagging API 호출: 0회
+- 총 API 호출: 426회
+- 디렉토리 구조 크기: 5,469 문자, 352 줄
+
+--------------------------------------------------------------------------------
+
+## 디렉토리 구조
+📁 .idea
+  📁 inspectionProfiles
+    📄 profiles_settings.xml
+  📄 .gitignore
+  📄 coding_test_study.iml
+  📄 misc.xml
+  📄 modules.xml
+  📄 vcs.xml
+📁 .vscode
+  📄 settings.json
+📁 week_0
+  📁 1018_체스판_다시_칠하기
+    📄 chahae.py
+📁 week_1
+  📁 10828_스택
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 10845_큐
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 10866_덱
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 1927_최소힙
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 5430_AC
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 wonwoo.py
+📁 week_10
+  📁 1012_유기농_배추
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 11724_연결_요소의_개수
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 11726_2×n_타일링
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 moon0e.py
+    📄 nmmmp.py
+    📄 wonwoo.py
+  📁 14940_쉬운_최단거리
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1697_숨바꼭질
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 18870_좌표_압축
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2805_나무_자르기
+    📄 2wnsqo.py
+    📄 README.md
+    📄 jmlee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+📁 week_11
+  📁 1074_Z
+    📄 README.md
+  📁 1931_회의실_배정
+    📄 README.md
+  📁 7576_토마토
+    📄 README.md
+  📄 test.txt
+📁 week_12
+  📄 test.txt
+📁 week_2
+  📁 10870_피보나치_수_5
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 1914_하노이_탑
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2750_수_정렬하기
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 test.txt
+    📄 wonwoo.py
+📁 week_3
+  📁 12865_평범한_배낭
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 test.txt
+    📄 wonwoo.py
+    📄 yikyeong.py
+  📁 2579_계단_오르기
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 test.txt
+    📄 wonwoo.py
+    📄 yikyeong.py
+  📁 9251_LCS
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 test.txt
+    📄 wonwoo.py
+    📄 yikyeong.py
+  📄 test.txt
+📁 week_4
+  📁 10451_순열_사이클
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 1260_DFS와_BFS
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 1991_트리_순회
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+  📁 2606_바이러스
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 wonwoo.py
+📁 week_5
+  📁 10026_적록색약
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1916_최소비용_구하기
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2178_미로_탐색
+    📄 2wnsqo.py
+    📄 chahae.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 5014_스타트링크
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+📁 week_6
+  📁 1103_게임
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1311_할_일_정하기_1
+    📄 jslee.py
+    📄 wonwoo.py
+  📁 1780_종이의_개수
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1937_욕심쟁이_판다
+    📄 jmlee.py
+    📄 jslee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1992_쿼드트리
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2630_색종이_만들기
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moonyoung.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+📁 week_7
+  📁 11501_주식
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1783_병든_나이트
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2110_공유기_설치
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2512_예산
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0e.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+📁 week_8
+  📁 11723_집합
+    📄 2wnsqo.py
+    📄 jslee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1182_부분수열의_합
+    📄 2wnsqo.py
+    📄 jslee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 15683_감시
+    📄 README.md
+  📁 1713_후보_추천하기
+    📄 2wnsqo.py
+    📄 jslee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 2961_도영이가_만든_맛있는_음식
+    📄 2wnsqo.py
+    📄 jslee.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 3190_뱀
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 N-Queen
+    📄 jslee.py
+    📄 nmmm9.py
+  📄 test.txt
+📁 week_9
+  📁 1003_피보나치_함수
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 11399_ATM
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 11659_구간_합_구하기_4
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1463_1로_만들기
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 1764_듣보잡
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+  📁 9095_1,_2,_3_더하기
+    📄 2wnsqo.py
+    📄 jmlee.py
+    📄 jslee.py
+    📄 moon0.py
+    📄 nmmm9.py
+    📄 wonwoo.py
+📄 README.md
+📄 update_readme.py
+
+--------------------------------------------------------------------------------
+로그 저장 시간: 2025-08-30 01:33:37
+================================================================================

@@ -379,7 +379,7 @@ def handle_chat(session_id, message):
         print(f"[DEBUG] 질문 키워드: {question_keywords}")
         
         # 청크 스코어링 및 선택 함수
-        def score_chunk(doc, meta, distance):
+        def score_chunk(doc, meta, distance, chunk_id=None):
             score = 0
             
             # 1. 유사도 점수 (거리가 작을수록 높은 점수)
@@ -389,29 +389,8 @@ def handle_chat(session_id, message):
             # 2. 역할 태그 매칭 점수
             role_tag = meta.get('role_tag', '')
             
-            # Lazy Loading: role_tag이 비어있으면 실시간으로 생성
-            if not role_tag and chunk_id and i < len(result.get('documents', [])):
-                try:
-                    chunk_content = result['documents'][i][:1000] if result['documents'][i] else ''
-                    if chunk_content:
-                        tag_prompt = f"아래 코드는 어떤 역할(기능/목적)을 하나요? 한글로 간단히 요약해줘.\n\n코드:\n{chunk_content}"
-                        tag_resp = openai.chat.completions.create(
-                            model="gpt-3.5-turbo",
-                            messages=[{"role": "user", "content": tag_prompt}],
-                            temperature=0.0,
-                            max_tokens=64
-                        )
-                        role_tag = tag_resp.choices[0].message.content.strip()
-                        meta['role_tag'] = role_tag
-                        # 생성된 role_tag을 ChromaDB에 업데이트
-                        collection.update(
-                            ids=[chunk_id],
-                            metadatas=[meta]
-                        )
-                        print(f"[DEBUG] Lazy 역할 태깅 완료: {chunk_id[:30]} -> {role_tag[:30]}...")
-                except Exception as e:
-                    print(f"[WARNING] Lazy 역할 태깅 실패: {e}")
-                    role_tag = ''
+            # Lazy Loading 비활성화 (현재 role_tag가 항상 비어있음)
+            # v0에서는 role_tag가 있었지만, 현재 버전에서는 비용 절감을 위해 비활성화
             
             if question_role_tag and role_tag:
                 # 완전 일치 또는 포함 관계 점수
@@ -481,8 +460,13 @@ def handle_chat(session_id, message):
                 distances = distances_list[0]
                 
                 if documents and metadatas and distances:
-                    for doc, meta, distance in zip(documents, metadatas, distances):
-                        scored_chunks.append(score_chunk(doc, meta, distance))
+                    # ids 정보도 가져오기 (에러 방지)
+                    ids_list = results.get('ids', [[]])
+                    ids = ids_list[0] if ids_list and len(ids_list) > 0 else [None] * len(documents)
+                    
+                    for i, (doc, meta, distance) in enumerate(zip(documents, metadatas, distances)):
+                        chunk_id = ids[i] if i < len(ids) else None
+                        scored_chunks.append(score_chunk(doc, meta, distance, chunk_id))
                 
                 # 점수 기준 내림차순 정렬
                 scored_chunks.sort(key=lambda x: x['score'], reverse=True)
