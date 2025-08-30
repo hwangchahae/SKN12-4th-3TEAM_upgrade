@@ -14,6 +14,8 @@ enc = tiktoken.get_encoding("cl100k_base")
 
 # top-k 유사 청크 개수
 TOP_K = 20
+# 파일 전체 함수 설명 시 사용할 확장 TOP_K
+EXTENDED_TOP_K = 100
 
 
 # 새로운 역할과 메타데이터를 활용한 시스템 프롬프트
@@ -346,12 +348,22 @@ def handle_chat(session_id, message):
             traceback.print_exc()
             # 문서 수 확인 실패는 치명적이지 않을 수 있으므로 계속 진행
         
+        # 파일 전체 함수 설명 요청 감지 (변수를 먼저 정의)
+        is_full_function_description = any([
+            '전체' in message and ('함수' in message or '메서드' in message or '메소드' in message),
+            '모든' in message and ('함수' in message or '메서드' in message or '메소드' in message),
+            'all function' in message.lower(),
+            'all method' in message.lower()
+        ])
+        
         # 유사 코드 청크 검색
-        print(f"[DEBUG] 유사 코드 청크 검색 시작 (TOP_K={TOP_K})")
+        # 파일 전체 함수 설명 요청 시 더 많은 청크 검색
+        search_top_k = EXTENDED_TOP_K if is_full_function_description else TOP_K
+        print(f"[DEBUG] 유사 코드 청크 검색 시작 (TOP_K={search_top_k})")
         try:
             results = collection.query(
                 query_embeddings=[embedding],
-                n_results=TOP_K
+                n_results=search_top_k
             )
             print(f"[DEBUG] 검색 결과 구조: {list(results.keys())}")
         except Exception as e:
@@ -507,13 +519,24 @@ def handle_chat(session_id, message):
             if meta.get('chunk_type'): meta_info.append(f"타입: {meta['chunk_type']}")
             
             # Lazy Loading: 필요한 경우만 role_tag 생성 (질문에 "역할"이나 "기능" 포함 시)
-            if ('역할' in message or '기능' in message or '목적' in message or 'role' in message.lower()):
+            # 파일 전체 함수 설명 요청 시 모든 청크에 대해 역할 태깅 수행
+            should_tag = ('역할' in message or '기능' in message or '설명' in message or 
+                         '목적' in message or 'role' in message.lower() or is_full_function_description)
+            
+            if should_tag:
                 if not meta.get('role_tag') and chunk['doc']:
                     try:
                         chunk_content = chunk['doc'][:1000]
-                        tag_prompt = f"아래 코드는 어떤 역할(기능/목적)을 하나요? 한글로 간단히 요약해줘.\n\n코드:\n{chunk_content}"
+                        # 함수/클래스 이름 포함한 구체적인 태깅 요청
+                        if meta.get('function_name') or meta.get('class_name'):
+                            entity_name = meta.get('function_name') or meta.get('class_name')
+                            tag_prompt = f"'{entity_name}'의 역할/기능을 한 문장으로 설명해줘:\n\n{chunk_content[:500]}"
+                        else:
+                            tag_prompt = f"아래 코드는 어떤 역할(기능/목적)을 하나요? 한글로 간단히 요약해줘.\n\n코드:\n{chunk_content}"
+                        
+                        # gpt-4o-mini로 변경하여 품질 향상
                         tag_resp = openai.chat.completions.create(
-                            model="gpt-3.5-turbo",
+                            model="gpt-4o-mini",
                             messages=[{"role": "user", "content": tag_prompt}],
                             temperature=0.0,
                             max_tokens=64
@@ -533,7 +556,9 @@ def handle_chat(session_id, message):
             seen_identities.add(chunk['identity'])
             
             # 충분한 컨텍스트를 모았으면 중단
-            if len(context_chunks) >= 10 or token_count >= max_context_tokens * 0.9:
+            # 파일 전체 함수 설명 요청 시 더 많은 청크 수집
+            max_chunks = 50 if is_full_function_description else 10
+            if len(context_chunks) >= max_chunks or token_count >= max_context_tokens * 0.9:
                 break
         
         # 컨텍스트가 너무 적으면 스코어가 낮은 청크도 추가
@@ -994,12 +1019,22 @@ def handle_modify_request(session_id, message):
                 'push_intent_message': push_intent_message
             }
         
+        # 파일 전체 함수 설명 요청 감지 (handle_modify_request에서도 필요)
+        is_full_function_description = any([
+            '전체' in message and ('함수' in message or '메서드' in message or '메소드' in message),
+            '모든' in message and ('함수' in message or '메서드' in message or '메소드' in message),
+            'all function' in message.lower(),
+            'all method' in message.lower()
+        ])
+        
         # 유사 코드 청크 검색
-        print(f"[DEBUG] 유사 코드 청크 검색 시작 (TOP_K={TOP_K})")
+        # 파일 전체 함수 설명 요청 시 더 많은 청크 검색
+        search_top_k = EXTENDED_TOP_K if is_full_function_description else TOP_K
+        print(f"[DEBUG] 유사 코드 청크 검색 시작 (TOP_K={search_top_k})")
         try:
             results = collection.query(
                 query_embeddings=[embedding],
-                n_results=TOP_K
+                n_results=search_top_k
             )
             print(f"[DEBUG] 검색 결과 구조: {list(results.keys())}")
         except Exception as e:

@@ -1,0 +1,179 @@
+================================================================================
+v6 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 + DB배치저장(기록용)
+================================================================================
+분석 시간: 2025-08-30 03:29:43
+저장소 URL: https://github.com/requests/requests
+세션 ID: 205111c3-7d79-4ae3-a474-745c6dd57750
+--------------------------------------------------------------------------------
+
+## 분석 결과 요약
+- 총 파일 수: 49개
+- 총 소요 시간: 26.87초 (0.4분)
+
+## API 호출 통계
+- GitHub API 호출: 98회
+- OpenAI Embedding API 호출: 16회
+- OpenAI Role Tagging API 호출: 0회
+- 총 API 호출: 114회
+- 디렉토리 구조 크기: 2,669 문자, 153 줄
+
+--------------------------------------------------------------------------------
+
+## 디렉토리 구조
+📁 .github
+  📁 ISSUE_TEMPLATE
+    📄 Bug_report.md
+    📄 Custom.md
+    📄 Feature_request.md
+  📁 workflows
+    📄 close-issues.yml
+    📄 codeql-analysis.yml
+    📄 lint.yml
+    📄 lock-issues.yml
+    📄 publish.yml
+    📄 run-tests.yml
+  📄 CODE_OF_CONDUCT.md
+  📄 CONTRIBUTING.md
+  📄 FUNDING.yml
+  📄 ISSUE_TEMPLATE.md
+  📄 SECURITY.md
+  📄 dependabot.yml
+📁 docs
+  📁 _static
+    📄 custom.css
+    📄 requests-sidebar.png
+  📁 _templates
+    📄 hacks.html
+    📄 sidebarintro.html
+    📄 sidebarlogo.html
+  📁 _themes
+    📄 .gitignore
+    📄 LICENSE
+    📄 flask_theme_support.py
+  📁 community
+    📄 faq.rst
+    📄 out-there.rst
+    📄 recommended.rst
+    📄 release-process.rst
+    📄 support.rst
+    📄 updates.rst
+    📄 vulnerabilities.rst
+  📁 dev
+    📄 authors.rst
+    📄 contributing.rst
+  📁 user
+    📄 advanced.rst
+    📄 authentication.rst
+    📄 install.rst
+    📄 quickstart.rst
+  📄 .nojekyll
+  📄 Makefile
+  📄 api.rst
+  📄 conf.py
+  📄 index.rst
+  📄 make.bat
+  📄 requirements.txt
+📁 ext
+  📄 LICENSE
+  📄 flower-of-life.jpg
+  📄 kr-compressed.png
+  📄 kr.png
+  📄 psf-compressed.png
+  📄 psf.png
+  📄 requests-logo-compressed.png
+  📄 requests-logo.ai
+  📄 requests-logo.png
+  📄 requests-logo.svg
+  📄 ss-compressed.png
+  📄 ss.png
+📁 src
+  📁 requests
+    📄 __init__.py
+    📄 __version__.py
+    📄 _internal_utils.py
+    📄 adapters.py
+    📄 api.py
+    📄 auth.py
+    📄 certs.py
+    📄 compat.py
+    📄 cookies.py
+    📄 exceptions.py
+    📄 help.py
+    📄 hooks.py
+    📄 models.py
+    📄 packages.py
+    📄 sessions.py
+    📄 status_codes.py
+    📄 structures.py
+    📄 utils.py
+📁 tests
+  📁 certs
+    📁 expired
+      📁 ca
+        📄 Makefile
+        📄 ca-private.key
+        📄 ca.cnf
+        📄 ca.crt
+        📄 ca.srl
+      📁 server
+        📄 Makefile
+        📄 cert.cnf
+        📄 server.csr
+        📄 server.key
+        📄 server.pem
+      📄 Makefile
+      📄 README.md
+    📁 mtls
+      📁 client
+        📄 Makefile
+        📄 cert.cnf
+        📄 client.csr
+        📄 client.key
+        📄 client.pem
+      📄 Makefile
+      📄 README.md
+    📁 valid
+      📁 server
+        📄 Makefile
+        📄 cert.cnf
+        📄 server.csr
+        📄 server.key
+        📄 server.pem
+    📄 README.md
+  📁 testserver
+    📄 __init__.py
+    📄 server.py
+  📄 __init__.py
+  📄 compat.py
+  📄 conftest.py
+  📄 test_adapters.py
+  📄 test_help.py
+  📄 test_hooks.py
+  📄 test_lowlevel.py
+  📄 test_packages.py
+  📄 test_requests.py
+  📄 test_structures.py
+  📄 test_testserver.py
+  📄 test_utils.py
+  📄 utils.py
+📄 .coveragerc
+📄 .git-blame-ignore-revs
+📄 .gitignore
+📄 .pre-commit-config.yaml
+📄 .readthedocs.yaml
+📄 AUTHORS.rst
+📄 HISTORY.md
+📄 LICENSE
+📄 MANIFEST.in
+📄 Makefile
+📄 NOTICE
+📄 README.md
+📄 pyproject.toml
+📄 requirements-dev.txt
+📄 setup.cfg
+📄 setup.py
+📄 tox.ini
+
+--------------------------------------------------------------------------------
+로그 저장 시간: 2025-08-30 03:29:43
+================================================================================

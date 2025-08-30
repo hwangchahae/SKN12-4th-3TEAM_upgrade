@@ -1027,19 +1027,11 @@ class RepositoryEmbedder:
         self.session_id = session_id
         collection_name = f"repo_{session_id}"
         
-        # 기존 컬렉션이 있으면 삭제 (차원 불일치 문제 해결)
-        try:
-            existing_collections = chroma_client.list_collections()
-            for collection in existing_collections:
-                if collection.name == collection_name:
-                    print(f"[DEBUG] 기존 컬렉션 삭제: {collection_name}")
-                    chroma_client.delete_collection(name=collection_name)
-                    break
-        except Exception as e:
-            print(f"[WARNING] 컬렉션 삭제 중 오류 (무시 가능): {e}")
-        
-        # 새 컬렉션 생성
-        self.collection = chroma_client.create_collection(name=collection_name)
+        # 컬렉션 가져오기 또는 생성 (v0 방식으로 복원)
+        self.collection = chroma_client.get_or_create_collection(
+            name=collection_name,
+            metadata={"description": f"Repository embeddings for session {session_id}"}
+        )
 
     def process_and_embed(self, files: List[Dict[str, Any]]):
         # 내부 비동기 함수 정의

@@ -1,0 +1,514 @@
+================================================================================
+v6 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 + DB배치저장(기록용)
+================================================================================
+분석 시간: 2025-08-30 03:31:26
+저장소 URL: https://github.com/psf/black
+세션 ID: 44894bbe-4b0b-4667-8c41-49027524b78d
+--------------------------------------------------------------------------------
+
+## 분석 결과 요약
+- 총 파일 수: 342개
+- 총 소요 시간: 57.80초 (1.0분)
+
+## API 호출 통계
+- GitHub API 호출: 461회
+- OpenAI Embedding API 호출: 73회
+- OpenAI Role Tagging API 호출: 0회
+- 총 API 호출: 534회
+- 디렉토리 구조 크기: 11,817 문자, 488 줄
+
+--------------------------------------------------------------------------------
+
+## 디렉토리 구조
+📁 .github
+  📁 ISSUE_TEMPLATE
+    📄 bug_report.md
+    📄 config.yml
+    📄 docs-issue.md
+    📄 feature_request.md
+    📄 style_issue.md
+  📁 workflows
+    📄 changelog.yml
+    📄 diff_shades.yml
+    📄 diff_shades_comment.yml
+    📄 doc.yml
+    📄 docker.yml
+    📄 fuzz.yml
+    📄 lint.yml
+    📄 pypi_upload.yml
+    📄 release_tests.yml
+    📄 test.yml
+    📄 upload_binary.yml
+  📄 CODE_OF_CONDUCT.md
+  📄 PULL_REQUEST_TEMPLATE.md
+  📄 dependabot.yml
+📁 action
+  📄 main.py
+📁 autoload
+  📄 black.vim
+📁 docs
+  📁 _static
+    📄 license.svg
+    📄 logo2-readme.png
+    📄 logo2.png
+    📄 pypi_template.svg
+  📁 compatible_configs
+    📁 flake8
+      📄 .flake8
+      📄 setup.cfg
+      📄 tox.ini
+    📁 isort
+      📄 .editorconfig
+      📄 .isort.cfg
+      📄 pyproject.toml
+      📄 setup.cfg
+    📁 pycodestyle
+      📄 .flake8
+      📄 setup.cfg
+      📄 tox.ini
+    📁 pylint
+      📄 pylintrc
+      📄 pyproject.toml
+      📄 setup.cfg
+  📁 contributing
+    📄 gauging_changes.md
+    📄 index.md
+    📄 issue_triage.md
+    📄 release_process.md
+    📄 the_basics.md
+  📁 guides
+    📄 index.md
+    📄 introducing_black_to_your_project.md
+    📄 using_black_with_other_tools.md
+  📁 integrations
+    📄 editors.md
+    📄 github_actions.md
+    📄 index.md
+    📄 source_version_control.md
+  📁 the_black_code_style
+    📄 current_style.md
+    📄 future_style.md
+    📄 index.md
+  📁 usage_and_configuration
+    📄 black_as_a_server.md
+    📄 black_docker_image.md
+    📄 file_collection_and_discovery.md
+    📄 index.md
+    📄 the_basics.md
+  📄 Makefile
+  📄 authors.md
+  📄 change_log.md
+  📄 conf.py
+  📄 faq.md
+  📄 getting_started.md
+  📄 index.md
+  📄 license.md
+  📄 make.bat
+  📄 requirements.txt
+📁 gallery
+  📄 Dockerfile
+  📄 README.md
+  📄 gallery.py
+📁 plugin
+  📄 black.vim
+📁 profiling
+  📄 dict_big.py
+  📄 dict_huge.py
+  📄 list_big.py
+  📄 list_huge.py
+  📄 mix_big.py
+  📄 mix_huge.py
+  📄 mix_small.py
+📁 scripts
+  📄 __init__.py
+  📄 check_pre_commit_rev_in_example.py
+  📄 check_version_in_basics_example.py
+  📄 diff_shades_gha_helper.py
+  📄 fuzz.py
+  📄 generate_schema.py
+  📄 make_width_table.py
+  📄 migrate-black.py
+  📄 release.py
+  📄 release_tests.py
+📁 src
+  📁 black
+    📁 resources
+      📄 __init__.py
+      📄 black.schema.json
+    📄 __init__.py
+    📄 __main__.py
+    📄 _width_table.py
+    📄 brackets.py
+    📄 cache.py
+    📄 comments.py
+    📄 concurrency.py
+    📄 const.py
+    📄 debug.py
+    📄 files.py
+    📄 handle_ipynb_magics.py
+    📄 linegen.py
+    📄 lines.py
+    📄 mode.py
+    📄 nodes.py
+    📄 numerics.py
+    📄 output.py
+    📄 parsing.py
+    📄 py.typed
+    📄 ranges.py
+    📄 report.py
+    📄 rusty.py
+    📄 schema.py
+    📄 strings.py
+    📄 trans.py
+  📁 blackd
+    📄 __init__.py
+    📄 __main__.py
+    📄 middlewares.py
+  📁 blib2to3
+    📁 pgen2
+      📄 __init__.py
+      📄 conv.py
+      📄 driver.py
+      📄 grammar.py
+      📄 literals.py
+      📄 parse.py
+      📄 pgen.py
+      📄 token.py
+      📄 tokenize.py
+    📄 Grammar.txt
+    📄 LICENSE
+    📄 PatternGrammar.txt
+    📄 README
+    📄 __init__.py
+    📄 pygram.py
+    📄 pytree.py
+  📄 _black_version.pyi
+📁 tests
+  📁 data
+    📁 cases
+      📄 allow_empty_first_line.py
+      📄 annotations.py
+      📄 async_stmts.py
+      📄 attribute_access_on_number_literals.py
+      📄 backslash_before_indent.py
+      📄 beginning_backslash.py
+      📄 bracketmatch.py
+      📄 bytes_docstring.py
+      📄 cantfit.py
+      📄 class_blank_parentheses.py
+      📄 class_methods_new_line.py
+      📄 collections.py
+      📄 comment_after_escaped_newline.py
+      📄 comment_type_hint.py
+      📄 comments.py
+      📄 comments2.py
+      📄 comments3.py
+      📄 comments4.py
+      📄 comments5.py
+      📄 comments6.py
+      📄 comments8.py
+      📄 comments9.py
+      📄 comments_in_blocks.py
+      📄 comments_in_double_parens.py
+      📄 comments_non_breaking_space.py
+      📄 composition.py
+      📄 composition_no_trailing_comma.py
+      📄 conditional_expression.py
+      📄 context_managers_38.py
+      📄 context_managers_39.py
+      📄 context_managers_autodetect_310.py
+      📄 context_managers_autodetect_311.py
+      📄 context_managers_autodetect_38.py
+      📄 context_managers_autodetect_39.py
+      📄 docstring.py
+      📄 docstring_newline.py
+      📄 docstring_no_extra_empty_line_before_eof.py
+      📄 docstring_no_string_normalization.py
+      📄 docstring_preview.py
+      📄 dummy_implementations.py
+      📄 empty_lines.py
+      📄 expression.diff
+      📄 expression.py
+      📄 f_docstring.py
+      📄 fmtonoff.py
+      📄 fmtonoff2.py
+      📄 fmtonoff3.py
+      📄 fmtonoff4.py
+      📄 fmtonoff5.py
+      📄 fmtonoff6.py
+      📄 fmtpass_imports.py
+      📄 fmtskip.py
+      📄 fmtskip10.py
+      📄 fmtskip11.py
+      📄 fmtskip2.py
+      📄 fmtskip3.py
+      📄 fmtskip4.py
+      📄 fmtskip5.py
+      📄 fmtskip6.py
+      📄 fmtskip7.py
+      📄 fmtskip8.py
+      📄 fmtskip9.py
+      📄 form_feeds.py
+      📄 format_unicode_escape_seq.py
+      📄 fstring.py
+      📄 fstring_quotations.py
+      📄 funcdef_return_type_trailing_comma.py
+      📄 function.py
+      📄 function2.py
+      📄 function_trailing_comma.py
+      📄 generics_wrapping.py
+      📄 ignore_pyi.py
+      📄 import_spacing.py
+      📄 is_simple_lookup_for_doublestar_expression.py
+      📄 keep_newline_after_match.py
+      📄 line_ranges_basic.py
+      📄 line_ranges_diff_edge_case.py
+      📄 line_ranges_exceeding_end.py
+      📄 line_ranges_fmt_off.py
+      📄 line_ranges_fmt_off_decorator.py
+      📄 line_ranges_fmt_off_overlap.py
+      📄 line_ranges_imports.py
+      📄 line_ranges_indentation.py
+      📄 line_ranges_outside_source.py
+      📄 line_ranges_two_passes.py
+      📄 line_ranges_unwrapping.py
+      📄 linelength6.py
+      📄 long_strings__type_annotations.py
+      📄 long_strings_flag_disabled.py
+      📄 module_docstring_1.py
+      📄 module_docstring_2.py
+      📄 module_docstring_3.py
+      📄 module_docstring_4.py
+      📄 module_docstring_followed_by_class.py
+      📄 module_docstring_followed_by_function.py
+      📄 multiline_consecutive_open_parentheses_ignore.py
+      📄 nested_stub.py
+      📄 no_blank_line_before_docstring.py
+      📄 numeric_literals.py
+      📄 numeric_literals_skip_underscores.py
+      📄 one_element_subscript.py
+      📄 parenthesized_context_managers.py
+      📄 pattern_matching_complex.py
+      📄 pattern_matching_extras.py
+      📄 pattern_matching_generic.py
+      📄 pattern_matching_long.py
+      📄 pattern_matching_simple.py
+      📄 pattern_matching_style.py
+      📄 pattern_matching_trailing_comma.py
+      📄 pattern_matching_with_if_stmt.py
+      📄 pep604_union_types_line_breaks.py
+      📄 pep646_typed_star_arg_type_var_tuple.py
+      📄 pep_570.py
+      📄 pep_572.py
+      📄 pep_572_do_not_remove_parens.py
+      📄 pep_572_py310.py
+      📄 pep_572_py39.py
+      📄 pep_572_remove_parens.py
+      📄 pep_572_slices.py
+      📄 pep_604.py
+      📄 pep_646.py
+      📄 pep_654.py
+      📄 pep_654_style.py
+      📄 pep_701.py
+      📄 percent_precedence.py
+      📄 power_op_newline.py
+      📄 power_op_spacing.py
+      📄 power_op_spacing_long.py
+      📄 prefer_rhs_split.py
+      📄 prefer_rhs_split_reformatted.py
+      📄 preview_cantfit_string.py
+      📄 preview_comments7.py
+      📄 preview_fstring.py
+      📄 preview_hug_parens_with_braces_and_square_brackets.py
+      📄 preview_hug_parens_with_braces_and_square_brackets_no_ll1.py
+      📄 preview_import_line_collapse.py
+      📄 preview_long_dict_values.py
+      📄 preview_long_strings.py
+      📄 preview_long_strings__east_asian_width.py
+      📄 preview_long_strings__edge_case.py
+      📄 preview_long_strings__regression.py
+      📄 preview_multiline_strings.py
+      📄 preview_remove_multiline_lone_list_item_parens.py
+      📄 preview_return_annotation_brackets_string.py
+      📄 py310_pep572.py
+      📄 python37.py
+      📄 python38.py
+      📄 python39.py
+      📄 raw_docstring.py
+      📄 raw_docstring_no_string_normalization.py
+      📄 remove_await_parens.py
+      📄 remove_except_parens.py
+      📄 remove_except_types_parens.py
+      📄 remove_except_types_parens_pre_py314.py
+      📄 remove_for_brackets.py
+      📄 remove_lone_list_item_parens.py
+      📄 remove_newline_after_code_block_open.py
+      📄 remove_parens.py
+      📄 remove_redundant_parens_in_case_guard.py
+      📄 remove_with_brackets.py
+      📄 return_annotation_brackets.py
+      📄 single_line_format_skip_with_multiple_comments.py
+      📄 skip_magic_trailing_comma.py
+      📄 skip_magic_trailing_comma_generic_wrap.py
+      📄 slices.py
+      📄 split_delimiter_comments.py
+      📄 starred_for_target.py
+      📄 string_prefixes.py
+      📄 stub.py
+      📄 target_version_flag.py
+      📄 torture.py
+      📄 trailing_comma.py
+      📄 trailing_comma_optional_parens1.py
+      📄 trailing_comma_optional_parens2.py
+      📄 trailing_comma_optional_parens3.py
+      📄 trailing_commas_in_leading_parts.py
+      📄 tricky_unicode_symbols.py
+      📄 tuple_with_stmt.py
+      📄 tupleassign.py
+      📄 type_aliases.py
+      📄 type_comment_syntax_error.py
+      📄 type_param_defaults.py
+      📄 type_params.py
+      📄 typed_params_trailing_comma.py
+      📄 walrus_in_dict.py
+      📄 whitespace.py
+    📁 gitignore_used_on_multiple_sources
+      📁 dir1
+        📄 a.py
+        📄 b.py
+      📁 dir2
+        📄 a.py
+        📄 b.py
+      📄 .gitignore
+    📁 ignore_directory_gitignore_tests
+      📁 large_ignored_dir_two
+        📁 inner
+          📄 b.py
+        📁 inner2
+          📄 c.py
+        📁 inner3
+          📄 d.py
+        📄 a.py
+      📄 .gitignore
+      📄 abc.py
+      📄 z.py
+    📁 ignore_subfolders_gitignore_tests
+      📁 subdir
+        📁 subdir
+          📄 c.py
+        📄 .gitignore
+        📄 b.py
+      📄 a.py
+    📁 include_exclude_tests
+      📁 b
+        📁 .definitely_exclude
+          📄 a.pie
+          📄 a.py
+          📄 a.pyi
+        📁 dont_exclude
+          📄 a.pie
+          📄 a.py
+          📄 a.pyi
+        📁 exclude
+          📄 a.pie
+          📄 a.py
+          📄 a.pyi
+      📄 .gitignore
+      📄 pyproject.toml
+    📁 invalid_gitignore_tests
+      📄 .gitignore
+      📄 a.py
+      📄 pyproject.toml
+    📁 invalid_nested_gitignore_tests
+      📁 a
+        📄 .gitignore
+        📄 a.py
+      📄 a.py
+      📄 pyproject.toml
+    📁 jupyter
+      📄 non_python_notebook.ipynb
+      📄 notebook_empty_metadata.ipynb
+      📄 notebook_no_trailing_newline.ipynb
+      📄 notebook_trailing_newline.ipynb
+      📄 notebook_which_cant_be_parsed.ipynb
+      📄 notebook_without_changes.ipynb
+    📁 line_ranges_formatted
+      📄 basic.py
+      📄 pattern_matching.py
+    📁 miscellaneous
+      📄 async_as_identifier.py
+      📄 blackd_diff.diff
+      📄 blackd_diff.py
+      📄 debug_visitor.out
+      📄 debug_visitor.py
+      📄 decorators.py
+      📄 expression_skip_magic_trailing_comma.diff
+      📄 force_py36.py
+      📄 force_pyi.py
+      📄 invalid_header.py
+      📄 missing_final_newline.diff
+      📄 missing_final_newline.py
+      📄 pattern_matching_invalid.py
+      📄 python2_detection.py
+      📄 string_quotes.py
+    📁 nested_gitignore_tests
+      📁 root
+        📁 child
+          📄 .gitignore
+          📄 a.py
+          📄 b.py
+          📄 c.py
+        📄 .gitignore
+        📄 a.py
+        📄 b.py
+        📄 c.py
+      📄 pyproject.toml
+      📄 x.py
+    📁 project_metadata
+      📄 both_pyproject.toml
+      📄 neither_pyproject.toml
+      📄 only_black_pyproject.toml
+      📄 only_metadata_pyproject.toml
+    📄 empty_pyproject.toml
+    📄 incorrect_spelling.toml
+    📄 invalid_line_ranges.toml
+  📄 __init__.py
+  📄 conftest.py
+  📄 empty.toml
+  📄 optional.py
+  📄 test.toml
+  📄 test_black.py
+  📄 test_blackd.py
+  📄 test_docs.py
+  📄 test_format.py
+  📄 test_ipynb.py
+  📄 test_no_ipynb.py
+  📄 test_ranges.py
+  📄 test_schema.py
+  📄 test_tokenize.py
+  📄 test_trans.py
+  📄 util.py
+📄 .flake8
+📄 .git_archival.txt
+📄 .gitattributes
+📄 .gitignore
+📄 .pre-commit-config.yaml
+📄 .pre-commit-hooks.yaml
+📄 .prettierrc.yaml
+📄 .readthedocs.yaml
+📄 AUTHORS.md
+📄 CHANGES.md
+📄 CITATION.cff
+📄 CONTRIBUTING.md
+📄 Dockerfile
+📄 LICENSE
+📄 README.md
+📄 SECURITY.md
+📄 action.yml
+📄 pyproject.toml
+📄 test_requirements.txt
+📄 tox.ini
+
+--------------------------------------------------------------------------------
+로그 저장 시간: 2025-08-30 03:31:26
+================================================================================

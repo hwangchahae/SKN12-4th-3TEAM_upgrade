@@ -1,0 +1,191 @@
+================================================================================
+v6 - GitHub 저장소 분석 결과 로그 + 필요시 역할 태깅으로 수정 + 세마포어조정 + ThreadPoolExecutor 병렬처리 + DB배치저장(기록용)
+================================================================================
+분석 시간: 2025-08-30 03:28:42
+저장소 URL: https://github.com/pallets/click
+세션 ID: 13992368-5934-4f2a-8312-acc6a6c5169e
+--------------------------------------------------------------------------------
+
+## 분석 결과 요약
+- 총 파일 수: 82개
+- 총 소요 시간: 30.48초 (0.5분)
+
+## API 호출 통계
+- GitHub API 호출: 131회
+- OpenAI Embedding API 호출: 39회
+- OpenAI Role Tagging API 호출: 0회
+- 총 API 호출: 170회
+- 디렉토리 구조 크기: 3,024 문자, 165 줄
+
+--------------------------------------------------------------------------------
+
+## 디렉토리 구조
+📁 .devcontainer
+  📄 devcontainer.json
+  📄 on-create-command.sh
+📁 .github
+  📁 ISSUE_TEMPLATE
+    📄 bug-report.md
+    📄 config.yml
+    📄 feature-request.md
+  📁 workflows
+    📄 lock.yaml
+    📄 pre-commit.yaml
+    📄 publish.yaml
+    📄 tests.yaml
+  📄 pull_request_template.md
+📁 docs
+  📁 _static
+    📄 click-icon.svg
+    📄 click-logo.svg
+    📄 click-name.svg
+  📄 advanced.rst
+  📄 api.rst
+  📄 arguments.rst
+  📄 changes.rst
+  📄 click-concepts.rst
+  📄 commands-and-groups.rst
+  📄 commands.rst
+  📄 complex.rst
+  📄 conf.py
+  📄 contrib.md
+  📄 documentation.md
+  📄 entry-points.rst
+  📄 exceptions.rst
+  📄 extending-click.rst
+  📄 faqs.md
+  📄 handling-files.rst
+  📄 index.rst
+  📄 license.rst
+  📄 option-decorators.rst
+  📄 options.md
+  📄 parameter-types.rst
+  📄 parameters.md
+  📄 prompts.md
+  📄 quickstart.md
+  📄 setuptools.md
+  📄 shell-completion.md
+  📄 support-multiple-versions.md
+  📄 testing.md
+  📄 unicode-support.md
+  📄 utils.md
+  📄 virtualenv.md
+  📄 why.md
+  📄 wincmd.md
+📁 examples
+  📁 aliases
+    📄 README
+    📄 aliases.ini
+    📄 aliases.py
+    📄 pyproject.toml
+  📁 colors
+    📄 README
+    📄 colors.py
+    📄 pyproject.toml
+  📁 completion
+    📄 README
+    📄 completion.py
+    📄 pyproject.toml
+  📁 complex
+    📁 complex
+      📁 commands
+        📄 __init__.py
+        📄 cmd_init.py
+        📄 cmd_status.py
+      📄 __init__.py
+      📄 cli.py
+    📄 README
+    📄 pyproject.toml
+  📁 imagepipe
+    📄 .gitignore
+    📄 README
+    📄 example01.jpg
+    📄 example02.jpg
+    📄 imagepipe.py
+    📄 pyproject.toml
+  📁 inout
+    📄 README
+    📄 inout.py
+    📄 pyproject.toml
+  📁 naval
+    📄 README
+    📄 naval.py
+    📄 pyproject.toml
+  📁 repo
+    📄 README
+    📄 pyproject.toml
+    📄 repo.py
+  📁 termui
+    📄 README
+    📄 pyproject.toml
+    📄 termui.py
+  📁 validation
+    📄 README
+    📄 pyproject.toml
+    📄 validation.py
+  📄 README
+📁 src
+  📁 click
+    📄 __init__.py
+    📄 _compat.py
+    📄 _termui_impl.py
+    📄 _textwrap.py
+    📄 _utils.py
+    📄 _winconsole.py
+    📄 core.py
+    📄 decorators.py
+    📄 exceptions.py
+    📄 formatting.py
+    📄 globals.py
+    📄 parser.py
+    📄 py.typed
+    📄 shell_completion.py
+    📄 termui.py
+    📄 testing.py
+    📄 types.py
+    📄 utils.py
+📁 tests
+  📁 typing
+    📄 typing_aliased_group.py
+    📄 typing_confirmation_option.py
+    📄 typing_group_kw_options.py
+    📄 typing_help_option.py
+    📄 typing_options.py
+    📄 typing_password_option.py
+    📄 typing_progressbar.py
+    📄 typing_simple_example.py
+    📄 typing_version_option.py
+  📄 conftest.py
+  📄 test_arguments.py
+  📄 test_basic.py
+  📄 test_chain.py
+  📄 test_command_decorators.py
+  📄 test_commands.py
+  📄 test_compat.py
+  📄 test_context.py
+  📄 test_custom_classes.py
+  📄 test_defaults.py
+  📄 test_formatting.py
+  📄 test_imports.py
+  📄 test_info_dict.py
+  📄 test_normalization.py
+  📄 test_options.py
+  📄 test_parser.py
+  📄 test_shell_completion.py
+  📄 test_termui.py
+  📄 test_testing.py
+  📄 test_types.py
+  📄 test_utils.py
+📄 .editorconfig
+📄 .gitignore
+📄 .pre-commit-config.yaml
+📄 .readthedocs.yaml
+📄 CHANGES.rst
+📄 LICENSE.txt
+📄 README.md
+📄 pyproject.toml
+📄 uv.lock
+
+--------------------------------------------------------------------------------
+로그 저장 시간: 2025-08-30 03:28:42
+================================================================================
